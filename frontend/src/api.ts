@@ -1,4 +1,4 @@
-import type { AskResponse, RepoSummary } from "./types";
+import type { AskResponse, EmbeddingMap, RepoSummary } from "./types";
 
 export const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/+$/, "");
 
@@ -68,4 +68,8 @@ export function askQuestion(repo: string, question: string): Promise<AskResponse
 
 export async function fetchRepos(): Promise<RepoSummary[]> {
   return (await request<{ repos: RepoSummary[] }>("/repos", {}, REPOS_TIMEOUT_MS)).repos;
+}
+
+export function fetchEmbeddingMap(): Promise<EmbeddingMap> {
+  return request<EmbeddingMap>("/embedding-map", {}, REPOS_TIMEOUT_MS);
 }

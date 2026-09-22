@@ -25,6 +25,24 @@ export interface RepoSummary {
 
 export type SourceType = "code" | "commit" | "pr";
 
+/**
+ * The 3D projection of every embedded chunk (backend/src/visualization/map.ts). Parallel arrays,
+ * not objects, so 6,000+ points arrive in one small payload.
+ */
+export interface EmbeddingMap {
+  repos: { id: string; name: string }[];
+  types: SourceType[];
+  count: number;
+  /** Flat [x, y, z, x, y, z, ...]. */
+  positions: number[];
+  repoIndex: number[];
+  typeIndex: number[];
+  isTest: number[];
+  titles: string[];
+  urls: string[];
+  builtAt: string | null;
+}
+
 export interface AnswerSource {
   /** Matches the [S1]-style citations in the answer text. */
   marker: string;

@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { AnswerPreview } from "../components/home/AnswerPreview";
+import { GalaxySection } from "../galaxy/GalaxySection";
 import { LoadError } from "../components/LoadError";
 import { RepoCard, RepoCardSkeleton } from "../components/repos/RepoCard";
 import { catalogTotals, formatNumber } from "../lib/format";
@@ -108,8 +109,16 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* Features */}
+      {/* The embedding galaxy */}
       <section className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
+        <GalaxySection
+          heading="Every indexed chunk, in one space"
+          intro="Before a question can be answered, each piece of code, commit, and pull request is turned into a list of numbers that captures its meaning. Here is that space, flattened to three dimensions — the same one a question is matched against."
+        />
+      </section>
+
+      {/* Features */}
+      <section className="mx-auto w-full max-w-6xl border-t border-slate-200 px-4 py-20 sm:px-6">
         <div className="max-w-2xl">
           <p className="text-sm font-semibold text-indigo-600">Why trust the answers</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Every answer shows its work</h2>

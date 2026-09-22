@@ -1,3 +1,4 @@
+import compression from "compression";
 import cors from "cors";
 import express, { type ErrorRequestHandler } from "express";
 import { loadConfig } from "./config/env.js";
@@ -8,6 +9,7 @@ import { GitHubClient } from "./ingestion/github.js";
 import { RepoCatalog } from "./repos/catalog.js";
 import { createAskRouter } from "./routes/ask.js";
 import { createIngestRouter } from "./routes/ingest.js";
+import { createMapRouter } from "./routes/map.js";
 import { createReposRouter } from "./routes/repos.js";
 
 const config = loadConfig();
@@ -20,12 +22,15 @@ const generator = new GeminiGenerator(config.geminiApiKey);
 
 const app = express();
 app.use(cors({ origin: config.corsOrigins }));
+// The embedding map is a big JSON payload; gzip takes it from megabytes to a few hundred KB.
+app.use(compression());
 app.use(express.json());
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 app.use(createReposRouter(catalog));
+app.use(createMapRouter(db));
 app.use(createAskRouter(db, embedder, generator));
 app.use(createIngestRouter(db, github, catalog));
 

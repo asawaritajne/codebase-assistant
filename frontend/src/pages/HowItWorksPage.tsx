@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { GalaxySection } from "../galaxy/GalaxySection";
 import { catalogTotals, formatNumber } from "../lib/format";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 import { useRepos } from "../repos/ReposContext";
@@ -169,6 +170,13 @@ export function HowItWorksPage() {
         <h2 className="text-2xl font-semibold tracking-tight text-slate-900">The pipeline</h2>
         <Lane label="Indexing" sublabel="Runs ahead of time, once per repository" steps={INDEXING_STEPS} />
         <Lane label="Answering" sublabel="Runs for every question, in seconds" steps={ANSWERING_STEPS} />
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
+        <GalaxySection
+          heading="What “searching by meaning” actually looks like"
+          intro="Retrieval doesn't match words; it matches positions in this space. A question is placed into the same space, and the nearest points become the sources for its answer. Highlight a repository to see how its code, history, and discussions group together."
+        />
       </section>
 
       <section className="border-y border-slate-200 bg-slate-50">

@@ -13,16 +13,19 @@
     "typecheck": "tsc --noEmit",
     "ingest": "tsx src/scripts/ingest.ts",
     "embed": "tsx src/scripts/embed.ts",
-    "test": "tsx --test $(find src -name \"*.test.ts\")"
+    "test": "tsx --test $(find src -name \"*.test.ts\")",
+    "map": "tsx src/scripts/map.ts"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
+    "compression": "^1.8.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "mongodb": "^7.6.0"
   },
   "devDependencies": {
+    "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^20.19.43",

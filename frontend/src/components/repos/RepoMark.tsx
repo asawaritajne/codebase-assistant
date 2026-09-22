@@ -5,6 +5,14 @@ const MARKS: Record<string, { monogram: string; className: string }> = {
   express: { monogram: "Ex", className: "bg-slate-800" },
   axios: { monogram: "Ax", className: "bg-violet-600" },
   vite: { monogram: "Vi", className: "bg-indigo-500" },
+  redux: { monogram: "Rx", className: "bg-purple-700" },
+  trpc: { monogram: "tR", className: "bg-sky-600" },
+  xstate: { monogram: "XS", className: "bg-fuchsia-700" },
+  "tanstack-query": { monogram: "TQ", className: "bg-red-500" },
+  "react-router": { monogram: "RR", className: "bg-rose-600" },
+  dayjs: { monogram: "Dj", className: "bg-orange-600" },
+  preact: { monogram: "Pr", className: "bg-indigo-700" },
+  zod: { monogram: "Zo", className: "bg-blue-700" },
 };
 
 const SIZES = {

@@ -18,13 +18,16 @@ alone, then verifies the citations before showing the answer.
 
 ## Indexed repositories
 
-| Repository | What it is | Indexed |
+Thirteen widely used JavaScript and TypeScript projects, each indexed the same way: source code and
+tests, the 200 most recent commits, and the 100 most recently merged pull requests.
+
+| | | |
 | --- | --- | --- |
-| [react-hook-form](https://github.com/react-hook-form/react-hook-form) | Forms for React | source + tests, 200 commits, 100 merged PRs |
-| [pmndrs/zustand](https://github.com/pmndrs/zustand) | State management | same |
-| [expressjs/express](https://github.com/expressjs/express) | Web framework | same |
-| [axios/axios](https://github.com/axios/axios) | HTTP client | same |
-| [vitejs/vite](https://github.com/vitejs/vite) | Build tool | same |
+| [react-hook-form](https://github.com/react-hook-form/react-hook-form) — forms | [zustand](https://github.com/pmndrs/zustand) — state | [express](https://github.com/expressjs/express) — web framework |
+| [axios](https://github.com/axios/axios) — HTTP client | [vite](https://github.com/vitejs/vite) — build tool | [redux](https://github.com/reduxjs/redux) — state |
+| [trpc](https://github.com/trpc/trpc) — RPC | [xstate](https://github.com/statelyai/xstate) — state machines | [tanstack/query](https://github.com/TanStack/query) — data fetching |
+| [react-router](https://github.com/remix-run/react-router) — routing | [dayjs](https://github.com/iamkun/dayjs) — dates | [preact](https://github.com/preactjs/preact) — UI library |
+| [zod](https://github.com/colinhacks/zod) — validation | | |
 
 Adding another repository is one entry in [`backend/src/config/repos.ts`](backend/src/config/repos.ts),
 followed by an ingestion and an embedding run.
@@ -60,7 +63,10 @@ Design decisions worth calling out:
 - **Everything is resumable.** Each document stores a fingerprint of what was embedded, so runs only
   process new or changed content and can stop and continue across days.
 - **Built for free tiers.** Rate limits, daily quotas, "high demand" 503s, request timeouts, and
-  dropped database connections are all handled explicitly rather than crashing a run.
+  dropped database connections are all handled explicitly rather than crashing a run. Generation
+  falls back across several Gemini models when one is overloaded.
+- **The index is visible.** Every embedded chunk is projected from 768 dimensions to 3 with PCA and
+  rendered as an interactive point cloud, so "search by meaning" is something you can look at.
 
 ## Tech stack
 
@@ -111,7 +117,14 @@ access token with `public_repo` scope.
    npm run embed -- --repo vite --max-chunks 200
    ```
 
-6. **Start both servers.**
+6. **Build the 3D map** of the embeddings for the website's visualization (re-run it after each
+   embedding run):
+
+   ```bash
+   npm run map
+   ```
+
+7. **Start both servers.**
 
    ```bash
    cd backend && npm run dev                 # http://localhost:3001
@@ -124,6 +137,7 @@ access token with `public_repo` scope.
 | --- | --- |
 | `GET /health` | Liveness check |
 | `GET /repos` | Repository catalog with live indexing stats |
+| `GET /embedding-map` | Every chunk's 3D position, for the visualization |
 | `POST /ask` | `{ "repo": "express", "question": "..." }` → answer, sources, citation report |
 | `POST /ingest/:repoId` | Re-ingest one repository (protect before deploying) |
 
@@ -137,10 +151,12 @@ backend/
   src/retrieval/   Atlas Vector Search queries
   src/generation/  prompt + answer generation
   src/qa/          the RAG pipeline, citation checking, query history
+  src/visualization/  PCA projection of embeddings to 3D
   src/routes/      Express routes
 frontend/
   src/pages/       home, repositories, ask, how it works
   src/components/  layout, repo cards, answer rendering, sources panel
+  src/galaxy/      the 3D embedding visualization (three.js, lazy-loaded)
 ```
 
 ## Tests
