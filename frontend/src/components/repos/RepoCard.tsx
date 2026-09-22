@@ -1,10 +1,12 @@
 import { Link } from "react-router";
 import { formatCompact, formatNumber } from "../../lib/format";
+import { useTilt } from "../../lib/useTilt";
 import type { RepoSummary } from "../../types";
 import { RepoMark } from "./RepoMark";
 import { StatusBadge } from "./StatusBadge";
 
 export function RepoCard({ repo }: { repo: RepoSummary }) {
+  const tilt = useTilt<HTMLElement>(5);
   const askable = repo.stats.chunks > 0;
   const ingested = repo.status !== "not-ingested";
   const stats = [
@@ -14,7 +16,13 @@ export function RepoCard({ repo }: { repo: RepoSummary }) {
   ];
 
   return (
-    <article className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
+    <article
+      ref={tilt.ref}
+      onPointerMove={tilt.onPointerMove}
+      onPointerLeave={tilt.onPointerLeave}
+      style={tilt.style}
+      className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm will-change-transform hover:border-slate-300 hover:shadow-lg"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <RepoMark repoId={repo.id} name={repo.name} />
