@@ -6,7 +6,7 @@ export const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001")
 const ASK_TIMEOUT_MS = 120_000;
 const REPOS_TIMEOUT_MS = 70_000;
 
-export type ApiErrorKind = "unreachable" | "rate-limited" | "timeout" | "invalid-question" | "server";
+export type ApiErrorKind = "unreachable" | "rate-limited" | "busy" | "timeout" | "invalid-question" | "server";
 
 export class ApiError extends Error {
   constructor(
@@ -40,6 +40,11 @@ async function request<T>(path: string, init: RequestInit, timeoutMs: number): P
       throw new ApiError(
         "rate-limited",
         "The AI service's free-tier limit has been reached. Wait a minute and try again; if the daily limit is used up, it resets tomorrow.",
+      );
+    case 503:
+      throw new ApiError(
+        "busy",
+        "Google's free AI tier is overloaded at the moment, so the answer couldn't be generated. Try again in a minute.",
       );
     case 400:
       throw new ApiError("invalid-question", serverMessage ?? "That request couldn't be processed.");

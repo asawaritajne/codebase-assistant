@@ -22,11 +22,11 @@ function fakeGenerator(...answers: string[]) {
   const prompts: string[] = [];
   return {
     prompts,
-    async generate(_systemInstruction: string, prompt: string): Promise<string> {
+    async generate(_systemInstruction: string, prompt: string) {
       prompts.push(prompt);
       const answer = answers.shift();
       if (answer === undefined) throw new Error("Generator called more times than expected");
-      return answer;
+      return { text: answer, model: "test-model" };
     },
   };
 }

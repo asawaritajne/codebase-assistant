@@ -3,7 +3,7 @@ import type { Db } from "mongodb";
 import { REPOS, findRepo } from "../config/repos.js";
 import type { GeminiEmbedder } from "../embedding/gemini.js";
 import type { GeminiGenerator } from "../generation/gemini.js";
-import { GeminiQuotaExhaustedError } from "../gemini/client.js";
+import { GeminiQuotaExhaustedError, GeminiUnavailableError } from "../gemini/client.js";
 import { answerQuestion } from "../qa/ask.js";
 
 const MAX_QUESTION_LENGTH = 1000;
@@ -32,6 +32,10 @@ export function createAskRouter(db: Db, embedder: GeminiEmbedder, generator: Gem
     try {
       res.json(await answerQuestion(db, embedder, generator, { question, repo: repo.fullName }));
     } catch (error) {
+      if (error instanceof GeminiUnavailableError) {
+        res.status(503).json({ error: error.message });
+        return;
+      }
       if (error instanceof GeminiQuotaExhaustedError) {
         res.status(429).json({ error: "Gemini's free-tier quota is used up; try again later.", detail: error.message });
         return;

@@ -3,6 +3,7 @@ import type { ApiErrorKind } from "../api";
 const TITLES: Record<ApiErrorKind, string> = {
   unreachable: "Can't reach the server",
   "rate-limited": "Rate limit reached",
+  busy: "The AI service is busy",
   timeout: "The request timed out",
   "invalid-question": "Couldn't use that question",
   server: "Something went wrong",

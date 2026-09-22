@@ -17,6 +17,14 @@ export class GeminiQuotaExhaustedError extends Error {
   }
 }
 
+/** Gemini is up but too busy to answer: every model was overloaded, hung, or errored. */
+export class GeminiUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GeminiUnavailableError";
+  }
+}
+
 export function createGeminiClient(apiKey: string): GoogleGenAI {
   return new GoogleGenAI({ apiKey, httpOptions: { timeout: REQUEST_TIMEOUT_MS } });
 }
@@ -37,6 +45,24 @@ function parseErrorBody(error: ApiError): GoogleErrorBody {
   } catch {
     return {};
   }
+}
+
+/**
+ * Recognises the one failure worth giving up on entirely: the daily quota. Everything else (a busy
+ * model, a hang, a dropped connection) is worth trying another model or another moment.
+ */
+export function dailyQuotaError(error: unknown, label: string): GeminiQuotaExhaustedError | null {
+  if (error instanceof GeminiQuotaExhaustedError) return error;
+  if (!(error instanceof ApiError) || error.status !== 429) return null;
+
+  const body = parseErrorBody(error);
+  const quotaIds = (body.error?.details ?? [])
+    .flatMap((detail) => detail.violations ?? [])
+    .map((violation) => violation.quotaId ?? "");
+  if (!quotaIds.some((id) => /PerDay/i.test(id))) return null;
+
+  const reason = (body.error?.message ?? error.message).slice(0, 300);
+  return new GeminiQuotaExhaustedError(`Gemini ${label} quota exhausted (${quotaIds.join(", ")}): ${reason}`);
 }
 
 export interface RetryPlan {

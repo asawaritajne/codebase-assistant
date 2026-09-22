@@ -1,7 +1,7 @@
 import type { Db } from "mongodb";
 import { withMongoRetry } from "../db/mongo.js";
 import { EMBEDDING_MODEL, type GeminiEmbedder } from "../embedding/gemini.js";
-import { GENERATION_MODEL, type GeminiGenerator } from "../generation/gemini.js";
+import type { GeminiGenerator } from "../generation/gemini.js";
 import { ANSWER_SYSTEM_INSTRUCTION, buildAnswerPrompt } from "../generation/prompt.js";
 import type { SourceType } from "../ingestion/types.js";
 import { retrieveRelevantChunks, type RetrievedChunk } from "../retrieval/search.js";
@@ -57,6 +57,8 @@ export interface GroundedAnswer {
   answer: string;
   citations: CitationReport;
   regenerated: boolean;
+  /** The Gemini model that produced the answer. */
+  model: string;
 }
 
 /**
@@ -71,9 +73,9 @@ export async function generateGroundedAnswer(
   chunks: RetrievedChunk[],
 ): Promise<GroundedAnswer> {
   const prompt = buildAnswerPrompt(repo, question, chunks);
-  const answer = await generator.generate(ANSWER_SYSTEM_INSTRUCTION, prompt);
+  const { text: answer, model } = await generator.generate(ANSWER_SYSTEM_INSTRUCTION, prompt);
   const citations = checkCitations(answer, chunks.length);
-  if (!needsRegeneration(citations)) return { answer, citations, regenerated: false };
+  if (!needsRegeneration(citations)) return { answer, citations, regenerated: false, model };
 
   const problem =
     citations.invalidMarkers.length > 0
@@ -82,8 +84,13 @@ export async function generateGroundedAnswer(
   console.warn(`[ask] Answer failed the citation check (${problem}); generating it again`);
 
   const retryPrompt = `${prompt}\n\nImportant: a previous answer to this question was rejected because ${problem}. Answer again, citing every claim with the markers of the sources above.`;
-  const retryAnswer = await generator.generate(ANSWER_SYSTEM_INSTRUCTION, retryPrompt);
-  return { answer: retryAnswer, citations: checkCitations(retryAnswer, chunks.length), regenerated: true };
+  const retry = await generator.generate(ANSWER_SYSTEM_INSTRUCTION, retryPrompt);
+  return {
+    answer: retry.text,
+    citations: checkCitations(retry.text, chunks.length),
+    regenerated: true,
+    model: retry.model,
+  };
 }
 
 /**
@@ -110,6 +117,7 @@ export async function answerQuestion(
           answer: NO_SOURCES_ANSWER,
           citations: { valid: true, citedMarkers: [], invalidMarkers: [], uncitedParagraphs: [] },
           regenerated: false,
+          model: "none",
         }
       : await generateGroundedAnswer(generator, repo, question, chunks);
 
@@ -122,7 +130,6 @@ export async function answerQuestion(
       const cited = grounded.citations.citedMarkers.includes(marker);
       return { marker, type, title, sourceUrl, startLine, endLine, isTest, score, cited, text };
     }),
-    model: GENERATION_MODEL,
     embeddingModel: EMBEDDING_MODEL,
     retrievalMs,
     latencyMs: Date.now() - startedAt,
