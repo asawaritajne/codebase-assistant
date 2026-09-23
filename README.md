@@ -124,6 +124,18 @@ access token with `public_repo` scope.
    npm run map
    ```
 
+   Indexing a large catalogue takes several days of budgeted runs, so
+   [`backend/scripts/daily-embed.sh`](backend/scripts/daily-embed.sh) does both steps unattended.
+   On macOS, install it as a daily job:
+
+   ```bash
+   chmod +x backend/scripts/daily-embed.sh
+   cp backend/scripts/com.codebase-assistant.embed.plist ~/Library/LaunchAgents/
+   launchctl bootstrap "gui/$UID" ~/Library/LaunchAgents/com.codebase-assistant.embed.plist
+   # progress: tail -f ~/Library/Logs/codebase-assistant-embed.log
+   # stop:     launchctl bootout "gui/$UID/com.codebase-assistant.embed"
+   ```
+
 7. **Start both servers.**
 
    ```bash
