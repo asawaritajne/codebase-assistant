@@ -44,19 +44,19 @@ export function Composer({ onSubmit, busy, placeholder = "Ask a question about t
           rows={2}
           maxLength={MAX_QUESTION_LENGTH}
           placeholder={placeholder}
-          className="max-h-40 min-h-11 flex-1 resize-y rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+          className="glass max-h-40 min-h-11 flex-1 resize-y rounded-xl px-3.5 py-2.5 text-sm text-chalk placeholder:text-mist/60 focus:border-glow/40 focus:ring-2 focus:ring-glow/20 focus:outline-none"
         />
         <button
           type="submit"
           disabled={!canSubmit}
-          className="h-11 shrink-0 rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="h-11 shrink-0 rounded-xl bg-linear-to-r from-glow to-iris px-5 text-sm font-semibold text-void transition-transform enabled:hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:from-white/10 disabled:to-white/10 disabled:text-mist"
         >
           {busy ? "Answering…" : "Ask"}
         </button>
       </div>
-      <p className="flex justify-between gap-4 text-xs text-slate-500">
+      <p className="flex justify-between gap-4 font-mono text-[0.7rem] text-mist/70">
         <span>Enter to ask · Shift+Enter for a new line</span>
-        {remaining <= 100 && <span className={remaining === 0 ? "text-red-600" : undefined}>{remaining} characters left</span>}
+        {remaining <= 100 && <span className={remaining === 0 ? "text-ember" : undefined}>{remaining} left</span>}
       </p>
     </form>
   );

@@ -1,12 +1,12 @@
 export function LoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm">
-      <p className="font-medium text-red-800">Couldn't load the repositories</p>
-      <p className="mt-1 text-red-700">{message}</p>
+    <div role="alert" className="rounded-2xl border border-ember/25 bg-ember/10 px-5 py-4 text-sm backdrop-blur">
+      <p className="font-display font-semibold text-ember">Couldn't load the repositories</p>
+      <p className="mt-1 text-chalk/80">{message}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-3 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
+        className="mt-3 rounded-lg border border-ember/30 bg-white/5 px-3 py-1.5 text-xs font-semibold text-ember transition-colors hover:bg-white/10"
       >
         Try again
       </button>

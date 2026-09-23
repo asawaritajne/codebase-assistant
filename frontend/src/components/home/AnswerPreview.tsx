@@ -25,69 +25,67 @@ function Citation({ marker }: { marker: string }) {
       target="_blank"
       rel="noreferrer"
       title={`${source.path} (lines ${source.lines})`}
-      className="mx-0.5 rounded bg-indigo-50 px-1 font-mono text-[0.7rem] font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100"
+      className="mx-0.5 rounded bg-glow/15 px-1 font-mono text-[0.7rem] font-semibold text-glow ring-1 ring-glow/30 hover:bg-glow/25"
     >
       {marker}
     </a>
   );
 }
 
-const code = "rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.8em] text-slate-800";
+const code = "rounded bg-white/10 px-1 py-0.5 font-mono text-[0.8em] text-glow";
 
 export function AnswerPreview() {
   return (
-    <figure className="relative">
-      <div aria-hidden="true" className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-linear-to-br from-indigo-200/60 via-white to-rose-100/70 blur-2xl" />
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-900/5 sm:p-6">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-2.5">
-            <RepoMark repoId="react-hook-form" name="React Hook Form" size="sm" />
-            <div>
-              <p className="text-sm font-semibold text-slate-900">React Hook Form</p>
-              <p className="text-xs text-slate-500">Example answer</p>
-            </div>
+    <figure className="glass relative rounded-2xl p-5 shadow-2xl shadow-void/60 sm:p-6">
+      <div aria-hidden="true" className="absolute -inset-8 -z-10 rounded-[3rem] bg-iris/20 blur-3xl" />
+      <div className="flex items-center justify-between gap-3 border-b border-white/8 pb-4">
+        <div className="flex items-center gap-2.5">
+          <RepoMark repoId="react-hook-form" name="React Hook Form" size="sm" />
+          <div>
+            <p className="font-display text-sm font-semibold text-chalk">React Hook Form</p>
+            <p className="font-mono text-[0.7rem] text-mist/80">example answer</p>
           </div>
-          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
-            Citations checked
-          </span>
         </div>
+        <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 font-mono text-[0.7rem] font-medium text-emerald-300 ring-1 ring-emerald-400/25">
+          citations checked
+        </span>
+      </div>
 
-        <p className="mt-5 ml-auto w-fit max-w-[90%] rounded-2xl rounded-br-sm bg-slate-900 px-4 py-2.5 text-sm text-white">
-          How does the library decide whether a field is dirty?
+      <p className="mt-5 ml-auto w-fit max-w-[90%] rounded-2xl rounded-br-sm bg-linear-to-r from-glow/20 to-iris/20 px-4 py-2.5 text-sm text-chalk ring-1 ring-white/10">
+        How does the library decide whether a field is dirty?
+      </p>
+
+      <div className="mt-5 space-y-3 text-sm leading-relaxed text-chalk/85">
+        <p>
+          <code className={code}>getDirtyFields</code> compares the form's current values with its defaults and marks each
+          field that differs as dirty with <code className={code}>true</code>
+          <Citation marker="S2" />.
         </p>
+        <p>
+          Registered array fields are treated as a single value instead of being compared item by item
+          <Citation marker="S2" />.
+        </p>
+        <p>
+          Array items that aren't dirty become <code className={code}>undefined</code>, and unchanged object keys are left out
+          <Citation marker="S1" />.
+        </p>
+      </div>
 
-        <div className="mt-5 space-y-3 text-sm leading-relaxed text-slate-700">
-          <p>
-            <code className={code}>getDirtyFields</code> compares the form's current values with its defaults and marks each
-            field that differs as dirty with <code className={code}>true</code>
-            <Citation marker="S2" />.
-          </p>
-          <p>
-            Registered array fields are treated as a single value instead of being compared item by item
-            <Citation marker="S2" />.
-          </p>
-          <p>
-            Array items that aren't dirty become <code className={code}>undefined</code>, and unchanged object keys are left out
-            <Citation marker="S1" />.
-          </p>
-        </div>
-
-        <div className="mt-5 space-y-2 border-t border-slate-100 pt-4">
-          <p className="text-xs font-medium text-slate-500">Sources</p>
-          {SOURCES.map((source) => (
-            <a
-              key={source.marker}
-              href={source.href}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs transition-colors hover:border-indigo-200 hover:bg-indigo-50/50"
-            >
-              <span className="font-mono font-semibold text-indigo-700">{source.marker}</span>
-              <span className="min-w-0 truncate font-mono text-slate-700">{source.path}</span>
-              <span className="ml-auto shrink-0 text-slate-400">lines {source.lines}</span>
-            </a>
-          ))}
-        </div>
+      <div className="mt-5 space-y-2 border-t border-white/8 pt-4">
+        <p className="font-mono text-[0.7rem] tracking-wider text-mist/70 uppercase">sources</p>
+        {SOURCES.map((source) => (
+          <a
+            key={source.marker}
+            href={source.href}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs transition-colors hover:border-glow/30 hover:bg-glow/5"
+          >
+            <span className="font-mono font-semibold text-glow">{source.marker}</span>
+            <span className="min-w-0 truncate font-mono text-mist">{source.path}</span>
+            <span className="ml-auto shrink-0 font-mono text-mist/60">L{source.lines}</span>
+          </a>
+        ))}
       </div>
       <figcaption className="sr-only">
         An example answer about React Hook Form, with each claim linked to the source file it came from.

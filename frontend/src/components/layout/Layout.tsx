@@ -13,10 +13,10 @@ export function Layout() {
   }, [pathname]);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-white text-slate-900">
+    <div className="flex min-h-dvh flex-col bg-void text-chalk">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-chalk focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-void"
       >
         Skip to content
       </a>

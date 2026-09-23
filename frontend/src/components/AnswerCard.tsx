@@ -10,7 +10,7 @@ function CitationChip({ marker, source }: { marker: string; source: AnswerSource
     return (
       <span
         title="This citation doesn't match any retrieved source"
-        className="mx-0.5 rounded bg-red-50 px-1 font-mono text-[0.7rem] font-semibold text-red-700 line-through ring-1 ring-red-200"
+        className="mx-0.5 rounded bg-ember/15 px-1 font-mono text-[0.7rem] font-semibold text-ember line-through ring-1 ring-ember/30"
       >
         {marker}
       </span>
@@ -24,7 +24,7 @@ function CitationChip({ marker, source }: { marker: string; source: AnswerSource
       target="_blank"
       rel="noreferrer"
       title={`${source.title}${lines}`}
-      className="mx-0.5 rounded bg-indigo-50 px-1 font-mono text-[0.7rem] font-semibold text-indigo-700 no-underline ring-1 ring-indigo-200 hover:bg-indigo-100"
+      className="mx-0.5 rounded bg-glow/15 px-1 font-mono text-[0.7rem] font-semibold text-glow no-underline ring-1 ring-glow/30 transition-colors hover:bg-glow/25"
     >
       {marker}
     </a>
@@ -42,16 +42,16 @@ function CitationNotice({ response }: { response: AskResponse }) {
         ? `It refers to ${citations.invalidMarkers.join(", ")}, which ${citations.invalidMarkers.length === 1 ? "doesn't" : "don't"} match any retrieved source.`
         : "It doesn't cite any of the retrieved sources.";
     return (
-      <div role="note" className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+      <div role="note" className="mb-4 rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-xs text-amber-200">
         <p className="font-medium">Parts of this answer couldn't be traced to its sources.</p>
-        <p className="mt-0.5">{detail} Check it against the sources below before relying on it.</p>
+        <p className="mt-0.5 text-amber-200/80">{detail} Check it against the sources below before relying on it.</p>
       </div>
     );
   }
 
   const count = citations.uncitedParagraphs.length;
   return (
-    <p className="mb-3 text-xs text-slate-500">
+    <p className="mb-4 text-xs text-mist">
       {count === 1 ? "1 statement in this answer doesn't" : `${count} statements in this answer don't`} cite a source.
     </p>
   );
@@ -78,15 +78,15 @@ export function AnswerCard({ response }: { response: AskResponse }) {
   }, [response.sources]);
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+    <article className="glass rounded-2xl px-5 py-5 shadow-xl shadow-void/40">
       <CitationNotice response={response} />
-      <div className="prose prose-sm max-w-none prose-slate prose-headings:font-semibold prose-code:before:content-none prose-code:after:content-none prose-pre:bg-slate-900">
+      <div className="prose prose-invert prose-sm max-w-none prose-headings:font-display prose-headings:text-chalk prose-p:text-chalk/90 prose-li:text-chalk/90 prose-strong:text-chalk prose-code:text-glow prose-code:before:content-none prose-code:after:content-none prose-pre:bg-void/80 prose-pre:ring-1 prose-pre:ring-white/10 prose-a:text-glow">
         <Markdown remarkPlugins={[remarkGfm]} components={components}>
           {markdown}
         </Markdown>
       </div>
-      <p className="mt-3 text-xs text-slate-400">
-        Answered in {(response.latencyMs / 1000).toFixed(1)}s · {response.model}
+      <p className="mt-4 font-mono text-[0.7rem] text-mist/70">
+        {(response.latencyMs / 1000).toFixed(1)}s · {response.model}
         {response.regenerated && " · regenerated to fix its citations"}
       </p>
       <SourcesPanel sources={response.sources} />

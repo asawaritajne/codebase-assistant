@@ -2,13 +2,13 @@ import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { formatNumber } from "../lib/format";
 import { repoColor } from "../lib/repoColors";
 import type { EmbeddingMap } from "../types";
-import type { HoveredPoint } from "./EmbeddingGalaxy";
+import type { HoveredPoint } from "./CloudPoints";
 import { useEmbeddingMap } from "./useEmbeddingMap";
 
 // three.js is a large dependency, so it only downloads once the galaxy scrolls into view.
 const EmbeddingGalaxy = lazy(() => import("./EmbeddingGalaxy"));
 
-const TYPE_LABELS: Record<string, string> = { code: "code", commit: "commit", pr: "pull request" };
+const TYPE_LABELS: Record<string, string> = { code: "source file", commit: "commit", pr: "pull request" };
 
 function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
@@ -39,20 +39,65 @@ function useNearViewport<T extends HTMLElement>() {
   return { ref, near };
 }
 
+function pointDetails(map: EmbeddingMap, index: number) {
+  const repo = map.repos[map.repoIndex[index]!];
+  const type = map.types[map.typeIndex[index]!] ?? "code";
+  return {
+    repoId: repo?.id ?? "",
+    repoName: repo?.name ?? "",
+    typeLabel: TYPE_LABELS[type] ?? type,
+    title: map.titles[index] ?? "",
+    url: map.urls[index] ?? "",
+    isTest: map.isTest[index] === 1,
+  };
+}
+
 function Tooltip({ map, hovered }: { map: EmbeddingMap; hovered: HoveredPoint }) {
-  const repo = map.repos[map.repoIndex[hovered.index]!];
-  const type = map.types[map.typeIndex[hovered.index]!] ?? "code";
+  const point = pointDetails(map, hovered.index);
   return (
     <div
-      className="pointer-events-none absolute z-10 max-w-xs -translate-x-1/2 -translate-y-full rounded-lg bg-slate-900/95 px-3 py-2 text-xs text-white shadow-lg ring-1 ring-white/10"
-      style={{ left: hovered.x, top: hovered.y - 12 }}
+      className="glass pointer-events-none absolute z-10 max-w-xs -translate-x-1/2 -translate-y-full rounded-xl px-3 py-2 text-xs shadow-2xl"
+      style={{ left: hovered.x, top: hovered.y - 14 }}
     >
-      <p className="flex items-center gap-1.5 font-medium">
-        <span aria-hidden="true" className="size-2 rounded-full" style={{ background: repoColor(repo?.id ?? "") }} />
-        {repo?.name} · {TYPE_LABELS[type] ?? type}
+      <p className="flex items-center gap-1.5 font-medium text-chalk">
+        <span aria-hidden="true" className="size-2 rounded-full" style={{ background: repoColor(point.repoId) }} />
+        {point.repoName} · {point.typeLabel}
       </p>
-      <p className="mt-1 font-mono break-all text-slate-300">{map.titles[hovered.index]}</p>
-      <p className="mt-1 text-slate-400">Click to open on GitHub</p>
+      <p className="mt-1 font-mono break-all text-mist">{point.title}</p>
+    </div>
+  );
+}
+
+function DetailPanel({ map, index, onClose }: { map: EmbeddingMap; index: number; onClose: () => void }) {
+  const point = pointDetails(map, index);
+  return (
+    <div className="glass absolute bottom-4 left-4 z-20 max-w-sm rounded-2xl p-4 shadow-2xl sm:bottom-6 sm:left-6">
+      <div className="flex items-start justify-between gap-4">
+        <p className="flex items-center gap-2 text-xs font-medium text-mist">
+          <span aria-hidden="true" className="size-2 rounded-full" style={{ background: repoColor(point.repoId) }} />
+          {point.repoName} · {point.typeLabel}
+          {point.isTest && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[0.65rem]">test</span>}
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="-m-1 grid size-6 place-items-center rounded-lg text-mist transition-colors hover:bg-white/10 hover:text-chalk"
+        >
+          <span className="sr-only">Close</span>
+          <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.8} className="size-3.5">
+            <path d="M5 5l10 10M15 5 5 15" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+      <p className="mt-2 font-mono text-sm break-all text-chalk">{point.title}</p>
+      <a
+        href={point.url}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold text-chalk transition-colors hover:bg-white/20"
+      >
+        Open on GitHub <span aria-hidden="true">↗</span>
+      </a>
     </div>
   );
 }
@@ -62,49 +107,49 @@ export function GalaxySection({ heading, intro }: { heading: string; intro: stri
   const { map, error } = useEmbeddingMap(near);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [hovered, setHovered] = useState<HoveredPoint | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
   const reducedMotion = usePrefersReducedMotion();
 
   return (
     <div ref={ref}>
       <div className="max-w-2xl">
-        <p className="text-sm font-semibold text-indigo-600">The index, visualized</p>
-        <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{heading}</h2>
-        <p className="mt-4 leading-relaxed text-slate-600">{intro}</p>
+        <p className="font-mono text-xs tracking-[0.2em] text-glow uppercase">The index, visualized</p>
+        <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-balance text-chalk sm:text-4xl">{heading}</h2>
+        <p className="mt-4 leading-relaxed text-mist">{intro}</p>
       </div>
 
-      <div className="relative mt-8 overflow-hidden rounded-3xl bg-slate-950 ring-1 ring-slate-800">
-        <div className="relative h-[420px] md:h-[560px]">
+      <div className="relative mt-8 overflow-hidden rounded-3xl border border-white/8 bg-void shadow-[0_40px_120px_-60px_var(--color-iris)]">
+        <div className="relative h-[460px] md:h-[620px]">
           {error ? (
-            <p className="grid h-full place-items-center px-6 text-center text-sm text-slate-400">{error}</p>
+            <p className="grid h-full place-items-center px-6 text-center text-sm text-mist">{error}</p>
           ) : map ? (
-            <Suspense fallback={<p className="grid h-full place-items-center text-sm text-slate-400">Loading 3D view…</p>}>
+            <Suspense fallback={<p className="grid h-full place-items-center text-sm text-mist">Loading 3D view…</p>}>
               <EmbeddingGalaxy
                 map={map}
                 highlight={highlight}
-                autoRotate={!reducedMotion && hovered === null}
+                autoRotate={!reducedMotion && hovered === null && selected === null}
                 onHover={setHovered}
-                onSelect={(index) => window.open(map.urls[index], "_blank", "noopener")}
+                onSelect={setSelected}
               />
               {hovered && <Tooltip map={map} hovered={hovered} />}
+              {selected !== null && <DetailPanel map={map} index={selected} onClose={() => setSelected(null)} />}
             </Suspense>
           ) : (
-            <p className="grid h-full place-items-center text-sm text-slate-400">
-              {near ? "Loading the embedding map…" : ""}
-            </p>
+            <p className="grid h-full place-items-center text-sm text-mist">{near ? "Loading the embedding map…" : ""}</p>
           )}
         </div>
 
         {map && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-slate-800 px-5 py-4">
-            <p className="text-xs text-slate-400">
-              {formatNumber(map.count)} chunks · {map.repos.length} repositories · drag to rotate, scroll to zoom
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-white/8 bg-deep/60 px-5 py-4">
+            <p className="font-mono text-[0.7rem] tracking-wide text-mist">
+              {formatNumber(map.count)} chunks · {map.repos.length} repositories · drag to rotate · click a mote for details
             </p>
             <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
                 onClick={() => setHighlight(null)}
                 className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                  highlight === null ? "bg-white text-slate-900" : "text-slate-300 hover:bg-white/10"
+                  highlight === null ? "bg-chalk text-void" : "text-mist hover:bg-white/10 hover:text-chalk"
                 }`}
               >
                 All
@@ -115,7 +160,7 @@ export function GalaxySection({ heading, intro }: { heading: string; intro: stri
                   type="button"
                   onClick={() => setHighlight(highlight === repo.id ? null : repo.id)}
                   className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                    highlight === repo.id ? "bg-white text-slate-900" : "text-slate-300 hover:bg-white/10"
+                    highlight === repo.id ? "bg-chalk text-void" : "text-mist hover:bg-white/10 hover:text-chalk"
                   }`}
                 >
                   <span aria-hidden="true" className="size-2 rounded-full" style={{ background: repoColor(repo.id, index) }} />
@@ -127,10 +172,10 @@ export function GalaxySection({ heading, intro }: { heading: string; intro: stri
         )}
       </div>
 
-      <p className="mt-3 text-xs text-slate-500">
-        Each dot is one indexed chunk of code, a commit message, or a pull request description, placed by meaning: the
-        768 numbers behind it reduced to three with principal component analysis. Chunks that sit together are chunks the
-        search considers similar.
+      <p className="mt-3 text-xs leading-relaxed text-mist/80">
+        Each mote is one indexed chunk — a piece of code, a commit message, or a pull request description — placed by
+        meaning: the 768 numbers behind it reduced to three with principal component analysis. Motes that sit together are
+        chunks the search considers similar.
       </p>
     </div>
   );

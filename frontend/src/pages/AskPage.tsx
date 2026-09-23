@@ -9,6 +9,7 @@ import { LoadingAnswer } from "../components/LoadingAnswer";
 import { RepoMark } from "../components/repos/RepoMark";
 import { StatusBadge, statusLabel } from "../components/repos/StatusBadge";
 import { formatNumber, indexedPercent } from "../lib/format";
+import { repoColor } from "../lib/repoColors";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 import { useRepos } from "../repos/ReposContext";
 import type { AskResponse, RepoSummary } from "../types";
@@ -27,8 +28,8 @@ function describeError(error: unknown): { kind: ApiErrorKind; message: string } 
 
 function RepoSidebar({ repos }: { repos: RepoSummary[] }) {
   return (
-    <aside className="hidden w-72 shrink-0 flex-col border-r border-slate-200 bg-slate-50/70 lg:flex">
-      <p className="px-5 pt-5 pb-2 text-xs font-semibold tracking-wider text-slate-500 uppercase">Repositories</p>
+    <aside className="hidden w-72 shrink-0 flex-col border-r border-white/5 bg-deep/40 lg:flex">
+      <p className="px-5 pt-5 pb-2 font-mono text-[0.7rem] tracking-[0.2em] text-mist/70 uppercase">Repositories</p>
       <nav aria-label="Repositories" className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
         {repos.map((repo) => (
           <NavLink
@@ -36,22 +37,22 @@ function RepoSidebar({ repos }: { repos: RepoSummary[] }) {
             to={`/ask/${repo.id}`}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-xl px-2.5 py-2 text-sm transition-colors ${
-                isActive ? "bg-white shadow-sm ring-1 ring-slate-200" : "hover:bg-white/70"
+                isActive ? "glass text-chalk" : "text-mist hover:bg-white/5 hover:text-chalk"
               }`
             }
           >
             <RepoMark repoId={repo.id} name={repo.name} size="sm" />
             <span className="min-w-0 flex-1">
-              <span className="block truncate font-medium text-slate-900">{repo.name}</span>
-              <span className="block truncate text-xs text-slate-500">
+              <span className="block truncate font-medium">{repo.name}</span>
+              <span className="block truncate font-mono text-[0.7rem] text-mist/70">
                 {repo.status === "ready" ? repo.category : statusLabel(repo)}
               </span>
             </span>
           </NavLink>
         ))}
       </nav>
-      <div className="border-t border-slate-200 px-5 py-4 text-xs">
-        <Link to="/how-it-works" className="font-medium text-slate-600 hover:text-slate-900">
+      <div className="border-t border-white/5 px-5 py-4 text-xs">
+        <Link to="/how-it-works" className="font-medium text-mist transition-colors hover:text-glow">
           How answers are made <span aria-hidden="true">→</span>
         </Link>
       </div>
@@ -62,24 +63,28 @@ function RepoSidebar({ repos }: { repos: RepoSummary[] }) {
 function ChatHeader({ repo, repos, onSwitch }: { repo: RepoSummary; repos: RepoSummary[]; onSwitch: (id: string) => void }) {
   const { stats } = repo;
   return (
-    <div className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3">
+    <div className="relative border-b border-white/5 bg-deep/40">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-20 left-1/3 size-48 rounded-full opacity-20 blur-3xl"
+        style={{ background: repoColor(repo.id) }}
+      />
+      <div className="relative mx-auto flex max-w-3xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3">
         <RepoMark repoId={repo.id} name={repo.name} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-semibold text-slate-900">{repo.name}</h1>
+            <h1 className="font-display font-semibold text-chalk">{repo.name}</h1>
             <StatusBadge repo={repo} />
           </div>
-          <p className="truncate text-xs text-slate-500">
-            {formatNumber(stats.files)} files · {formatNumber(stats.commits)} commits · {formatNumber(stats.pullRequests)} pull
-            requests indexed
+          <p className="truncate font-mono text-[0.7rem] text-mist/80">
+            {formatNumber(stats.files)} files · {formatNumber(stats.commits)} commits · {formatNumber(stats.pullRequests)} PRs
           </p>
         </div>
         <a
           href={repo.githubUrl}
           target="_blank"
           rel="noreferrer"
-          className="hidden text-sm font-medium text-slate-600 hover:text-slate-900 sm:block"
+          className="hidden text-sm font-medium text-mist transition-colors hover:text-glow sm:block"
         >
           GitHub <span aria-hidden="true">↗</span>
         </a>
@@ -88,10 +93,10 @@ function ChatHeader({ repo, repos, onSwitch }: { repo: RepoSummary; repos: RepoS
           <select
             value={repo.id}
             onChange={(event) => onSwitch(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800"
+            className="w-full rounded-lg border border-white/10 bg-deep px-3 py-2 text-sm text-chalk"
           >
             {repos.map((option) => (
-              <option key={option.id} value={option.id}>
+              <option key={option.id} value={option.id} className="bg-deep">
                 {option.name}
                 {option.status === "ready" ? "" : ` (${statusLabel(option)})`}
               </option>
@@ -100,7 +105,7 @@ function ChatHeader({ repo, repos, onSwitch }: { repo: RepoSummary; repos: RepoS
         </label>
       </div>
       {repo.status === "indexing" && (
-        <p className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-900">
+        <p className="relative border-t border-amber-400/20 bg-amber-400/10 px-4 py-2 text-center text-xs text-amber-200">
           Still indexing: {indexedPercent(repo)}% of this repository is searchable so far, so answers may miss parts that
           aren't indexed yet.
         </p>
@@ -121,14 +126,14 @@ function RepoEmptyState({
   onPick: (question: string) => void;
 }) {
   return (
-    <div className="py-8 text-center sm:py-12">
+    <div className="py-10 text-center sm:py-14">
       <div className="flex justify-center">
         <RepoMark repoId={repo.id} name={repo.name} size="lg" />
       </div>
-      <h2 className="mt-5 text-xl font-semibold text-slate-900">Ask about {repo.name}</h2>
-      <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-slate-600">
-        {repo.description} Answers come only from its indexed code, tests, commits, and pull requests, with every claim linked
-        to GitHub.
+      <h2 className="mt-5 font-display text-2xl font-semibold text-chalk">Ask about {repo.name}</h2>
+      <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-mist">
+        {repo.description} Answers come only from its indexed code, tests, commits, and pull requests, with every claim
+        linked to GitHub.
       </p>
       {canAsk && (
         <div className="mx-auto mt-8 grid max-w-xl gap-2 sm:grid-cols-2">
@@ -138,7 +143,7 @@ function RepoEmptyState({
               type="button"
               disabled={busy}
               onClick={() => onPick(question)}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm text-slate-700 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="glass glass-hover rounded-xl px-4 py-3 text-left text-sm text-mist transition-colors hover:text-chalk disabled:cursor-not-allowed disabled:opacity-50"
             >
               {question}
             </button>
@@ -210,7 +215,7 @@ export function AskPage() {
 
   if (!repos) {
     return (
-      <div role="status" className="flex flex-1 items-center justify-center py-24 text-sm text-slate-500">
+      <div role="status" className="flex flex-1 items-center justify-center py-24 text-sm text-mist">
         Loading repositories…
       </div>
     );
@@ -219,9 +224,9 @@ export function AskPage() {
   if (!repo) {
     return (
       <div className="mx-auto max-w-xl px-4 py-24 text-center">
-        <h1 className="text-2xl font-semibold text-slate-900">Repository not found</h1>
-        <p className="mt-3 text-slate-600">There's no repository called “{repoId}” here.</p>
-        <Link to="/repos" className="mt-6 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-500">
+        <h1 className="font-display text-2xl font-semibold text-chalk">Repository not found</h1>
+        <p className="mt-3 text-mist">There's no repository called “{repoId}” here.</p>
+        <Link to="/repos" className="mt-6 inline-block text-sm font-semibold text-glow hover:text-chalk">
           Browse repositories <span aria-hidden="true">→</span>
         </Link>
       </div>
@@ -236,8 +241,9 @@ export function AskPage() {
       <section aria-label={`Ask about ${repo.name}`} className="flex min-w-0 flex-1 flex-col">
         <ChatHeader repo={repo} repos={repos} onSwitch={(id) => navigate(`/ask/${id}`)} />
 
-        <div className="flex-1 overflow-y-auto bg-slate-50/50">
-          <div className="mx-auto max-w-3xl px-4 py-6" role="log" aria-live="polite" aria-label="Conversation">
+        <div className="relative flex-1 overflow-y-auto">
+          <div aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 opacity-25" />
+          <div className="relative mx-auto max-w-3xl px-4 py-6" role="log" aria-live="polite" aria-label="Conversation">
             {turns.length === 0 ? (
               <RepoEmptyState repo={repo} canAsk={canAsk} busy={busy} onPick={ask} />
             ) : (
@@ -245,7 +251,7 @@ export function AskPage() {
                 {turns.map((turn) => (
                   <li key={turn.id} id={turnElementId(turn.id)} className="scroll-mt-4 space-y-3">
                     <div className="flex justify-end">
-                      <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-slate-900 px-4 py-2.5 text-sm whitespace-pre-wrap text-white">
+                      <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-linear-to-r from-glow/20 to-iris/20 px-4 py-2.5 text-sm whitespace-pre-wrap text-chalk ring-1 ring-white/10">
                         {turn.question}
                       </p>
                     </div>
@@ -261,13 +267,13 @@ export function AskPage() {
           </div>
         </div>
 
-        <div className="border-t border-slate-200 bg-white">
+        <div className="border-t border-white/5 bg-deep/40">
           <div className="mx-auto max-w-3xl px-4 py-3">
             {canAsk ? (
               <Composer onSubmit={ask} busy={busy} placeholder={`Ask about ${repo.name}…`} />
             ) : (
-              <p className="py-3 text-center text-sm text-slate-500">
-                {repo.name} isn't searchable yet. It will open up for questions as soon as its indexing starts.
+              <p className="py-3 text-center text-sm text-mist">
+                {repo.name} isn't searchable yet. It opens up for questions as soon as its indexing starts.
               </p>
             )}
           </div>

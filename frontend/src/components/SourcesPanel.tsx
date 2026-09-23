@@ -2,9 +2,9 @@ import { useId, useState } from "react";
 import type { AnswerSource, SourceType } from "../types";
 
 const TYPE_BADGES: Record<SourceType, { label: string; className: string }> = {
-  code: { label: "Code", className: "bg-sky-50 text-sky-700 ring-sky-200" },
-  commit: { label: "Commit", className: "bg-amber-50 text-amber-800 ring-amber-200" },
-  pr: { label: "Pull request", className: "bg-violet-50 text-violet-700 ring-violet-200" },
+  code: { label: "Code", className: "bg-glow/15 text-glow ring-glow/25" },
+  commit: { label: "Commit", className: "bg-amber-400/15 text-amber-200 ring-amber-400/25" },
+  pr: { label: "Pull request", className: "bg-iris/20 text-violet-200 ring-iris/30" },
 };
 
 const EXCERPT_LINES = 6;
@@ -28,19 +28,19 @@ export function SourcesPanel({ sources }: { sources: AnswerSource[] }) {
   const citedCount = sources.filter((source) => source.cited).length;
 
   return (
-    <section className="mt-4 border-t border-slate-100 pt-3">
+    <section className="mt-4 border-t border-white/8 pt-3">
       <button
         type="button"
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => setOpen((isOpen) => !isOpen)}
-        className="flex items-center gap-1.5 rounded text-sm font-medium text-slate-700 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:outline-none"
+        className="flex items-center gap-1.5 rounded text-sm font-medium text-mist transition-colors hover:text-chalk"
       >
         <svg
           aria-hidden="true"
           viewBox="0 0 20 20"
           fill="currentColor"
-          className={`h-4 w-4 transition-transform ${open ? "rotate-90" : ""}`}
+          className={`size-4 transition-transform ${open ? "rotate-90" : ""}`}
         >
           <path
             fillRule="evenodd"
@@ -48,7 +48,7 @@ export function SourcesPanel({ sources }: { sources: AnswerSource[] }) {
             clipRule="evenodd"
           />
         </svg>
-        Sources ({sources.length})<span className="font-normal text-slate-500">· {citedCount} cited</span>
+        Sources ({sources.length})<span className="font-normal text-mist/70">· {citedCount} cited</span>
       </button>
 
       <ol id={listId} hidden={!open} className="mt-3 space-y-3">
@@ -60,21 +60,19 @@ export function SourcesPanel({ sources }: { sources: AnswerSource[] }) {
           return (
             <li
               key={source.marker}
-              className={`rounded-xl border border-slate-200 p-3 ${source.cited ? "" : "opacity-75"}`}
+              className={`rounded-xl border border-white/8 bg-white/[0.03] p-3 ${source.cited ? "" : "opacity-60"}`}
             >
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                <span className="font-mono font-semibold text-indigo-700">{source.marker}</span>
+                <span className="font-mono font-semibold text-glow">{source.marker}</span>
                 <span className={`rounded px-1.5 py-0.5 font-medium ring-1 ${badge.className}`}>{badge.label}</span>
-                {source.isTest && (
-                  <span className="rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-600">Test file</span>
-                )}
-                {!source.cited && <span className="text-slate-500">Not cited in the answer</span>}
+                {source.isTest && <span className="rounded bg-white/8 px-1.5 py-0.5 font-medium text-mist">Test file</span>}
+                {!source.cited && <span className="text-mist/70">Not cited in the answer</span>}
               </div>
               <a
                 href={source.sourceUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-1.5 block text-sm font-medium wrap-break-word text-slate-900 hover:text-indigo-700 hover:underline"
+                className="mt-1.5 block font-mono text-sm wrap-break-word text-chalk transition-colors hover:text-glow"
               >
                 {source.title}
                 {lines}
@@ -83,7 +81,7 @@ export function SourcesPanel({ sources }: { sources: AnswerSource[] }) {
               </a>
               {showExcerpt && (
                 <pre
-                  className={`mt-2 max-h-40 overflow-auto rounded-lg bg-slate-50 p-2.5 text-xs leading-relaxed text-slate-700 ${
+                  className={`mt-2 max-h-40 overflow-auto rounded-lg bg-void/70 p-2.5 text-xs leading-relaxed text-mist ${
                     source.type === "code" ? "font-mono" : "font-sans whitespace-pre-wrap"
                   }`}
                 >
