@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { AnswerPreview } from "../components/home/AnswerPreview";
 import { LoadError } from "../components/LoadError";
-import { RepoCard, RepoCardSkeleton } from "../components/repos/RepoCard";
+import { RepoIndex, RepoIndexSkeleton } from "../components/repos/RepoIndex";
 import { Reveal } from "../components/Reveal";
 import { GalaxySection } from "../galaxy/GalaxySection";
 import { HeroBackdrop } from "../galaxy/HeroBackdrop";
@@ -32,24 +32,19 @@ const FEATURES = [
   },
 ];
 
-function FeatureCard({ feature }: { feature: (typeof FEATURES)[number] }) {
-  const tilt = useTilt<HTMLDivElement>();
+/** An entry in the numbered argument for trusting the answers — a rule and a big serif numeral. */
+function FeatureEntry({ feature, index }: { feature: (typeof FEATURES)[number]; index: number }) {
   return (
-    <div
-      ref={tilt.ref}
-      onPointerMove={tilt.onPointerMove}
-      onPointerLeave={tilt.onPointerLeave}
-      style={tilt.style}
-      className="glass glass-hover relative h-full overflow-hidden rounded-2xl p-6 will-change-transform"
-    >
-      <span aria-hidden="true" className={`absolute inset-x-0 -top-24 h-40 bg-linear-to-b ${feature.accent} to-transparent blur-2xl`} />
-      <span className="relative grid size-11 place-items-center rounded-xl border border-white/10 bg-white/5 text-glow">
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" className="size-5">
-          <path d={feature.icon} />
-        </svg>
+    <div className="group relative grid grid-cols-1 gap-x-8 gap-y-3 border-t border-white/10 py-8 md:grid-cols-12">
+      <span
+        aria-hidden="true"
+        className="absolute top-0 left-0 h-px w-0 bg-linear-to-r from-glow to-transparent transition-all duration-500 group-hover:w-40"
+      />
+      <span className="display text-4xl text-mist/30 transition-colors group-hover:text-glow md:col-span-2">
+        {String(index + 1).padStart(2, "0")}
       </span>
-      <h3 className="relative mt-5 font-display font-semibold text-chalk">{feature.title}</h3>
-      <p className="relative mt-2 text-sm leading-relaxed text-mist">{feature.body}</p>
+      <h3 className="display text-3xl text-chalk md:col-span-4">{feature.title}</h3>
+      <p className="text-sm leading-relaxed text-mist md:col-span-6">{feature.body}</p>
     </div>
   );
 }
@@ -81,7 +76,7 @@ export function HomePage() {
               <span aria-hidden="true" className="size-1.5 animate-pulse rounded-full bg-glow" />
               retrieval-augmented generation
             </p>
-            <h1 className="mt-6 font-display text-5xl font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl lg:leading-[1.05]">
+            <h1 className="mt-6 display text-5xl text-balance sm:text-6xl lg:text-7xl lg:leading-[1.05]">
               Ask a codebase anything.
               <span className="text-aurora block">Check every answer.</span>
             </h1>
@@ -106,7 +101,7 @@ export function HomePage() {
             <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-white/10 pt-6">
               {heroStats.map((stat) => (
                 <div key={stat.label}>
-                  <dd className="font-display text-3xl font-semibold tracking-tight text-chalk tabular-nums">
+                  <dd className="display text-3xl text-chalk tabular-nums">
                     {stat.value === undefined ? "—" : formatNumber(stat.value)}
                   </dd>
                   <dt className="mt-1 font-mono text-[0.7rem] tracking-wider text-mist/80 uppercase">{stat.label}</dt>
@@ -134,7 +129,7 @@ export function HomePage() {
       <section className="mx-auto w-full max-w-7xl px-4 pb-24 sm:px-6">
         <Reveal className="max-w-2xl">
           <p className="font-mono text-xs tracking-[0.2em] text-glow uppercase">Why trust the answers</p>
-          <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-chalk sm:text-4xl">
+          <h2 className="mt-3 display text-3xl text-chalk sm:text-4xl">
             Every answer shows its work
           </h2>
           <p className="mt-4 leading-relaxed text-mist">
@@ -142,10 +137,10 @@ export function HomePage() {
             the code it came from, in one click.
           </p>
         </Reveal>
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
+        <div className="mt-12 border-b border-white/10">
           {FEATURES.map((feature, index) => (
             <Reveal key={feature.title} delay={index * 90}>
-              <FeatureCard feature={feature} />
+              <FeatureEntry feature={feature} index={index} />
             </Reveal>
           ))}
         </div>
@@ -158,7 +153,7 @@ export function HomePage() {
           <Reveal className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-2xl">
               <p className="font-mono text-xs tracking-[0.2em] text-glow uppercase">Repositories</p>
-              <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-chalk sm:text-4xl">
+              <h2 className="mt-3 display text-3xl text-chalk sm:text-4xl">
                 Well-known libraries, ready to question
               </h2>
               <p className="mt-4 text-mist">From form handling to build tooling, each indexed from its real source.</p>
@@ -171,15 +166,7 @@ export function HomePage() {
             {error ? (
               <LoadError message={error} onRetry={reload} />
             ) : (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {repos
-                  ? repos.slice(0, 6).map((repo, index) => (
-                      <Reveal key={repo.id} delay={index * 60}>
-                        <RepoCard repo={repo} />
-                      </Reveal>
-                    ))
-                  : [0, 1, 2].map((n) => <RepoCardSkeleton key={n} />)}
-              </div>
+              <Reveal>{repos ? <RepoIndex repos={repos.slice(0, 6)} /> : <RepoIndexSkeleton rows={4} />}</Reveal>
             )}
           </div>
         </div>
@@ -190,7 +177,7 @@ export function HomePage() {
         <Reveal>
           <div className="glass relative overflow-hidden rounded-3xl px-6 py-16 text-center sm:px-12">
             <span aria-hidden="true" className="absolute inset-x-0 -top-32 h-64 bg-linear-to-b from-iris/30 to-transparent blur-3xl" />
-            <h2 className="relative font-display text-3xl font-semibold tracking-tight text-balance text-chalk sm:text-4xl">
+            <h2 className="relative display text-3xl text-balance text-chalk sm:text-4xl">
               Pick a repository and start asking
             </h2>
             <p className="relative mx-auto mt-4 max-w-xl text-mist">

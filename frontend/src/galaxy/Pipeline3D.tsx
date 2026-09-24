@@ -37,7 +37,7 @@ export function Pipeline3D({ stages }: { stages: PipelineStage[] }) {
         {stages.map((stage, index) => (
           <li key={stage.title} className="bg-deep/80 p-5">
             <span className="font-mono text-xs text-glow">{String(index + 1).padStart(2, "0")}</span>
-            <h3 className="mt-1.5 font-display text-sm font-semibold text-chalk">{stage.title}</h3>
+            <h3 className="mt-1.5 text-sm font-medium text-chalk">{stage.title}</h3>
             <p className="mt-1.5 text-xs leading-relaxed text-mist">{stage.detail}</p>
           </li>
         ))}

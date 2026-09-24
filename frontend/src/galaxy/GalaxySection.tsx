@@ -129,7 +129,7 @@ export function GalaxySection({ heading, intro }: { heading: string; intro: stri
     <div ref={ref}>
       <div className="max-w-2xl">
         <p className="font-mono text-xs tracking-[0.2em] text-glow uppercase">The index, visualized</p>
-        <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-balance text-chalk sm:text-4xl">{heading}</h2>
+        <h2 className="mt-3 display text-3xl text-balance text-chalk sm:text-4xl">{heading}</h2>
         <p className="mt-4 leading-relaxed text-mist">{intro}</p>
       </div>
 

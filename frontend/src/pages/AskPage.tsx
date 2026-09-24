@@ -76,7 +76,7 @@ function ChatHeader({ repo, repos, onSwitch }: { repo: RepoSummary; repos: RepoS
         <RepoMark repoId={repo.id} name={repo.name} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-display font-semibold text-chalk">{repo.name}</h1>
+            <h1 className="display text-xl text-chalk">{repo.name}</h1>
             <StatusBadge repo={repo} />
           </div>
           <p className="truncate font-mono text-[0.7rem] text-mist/80">
@@ -133,7 +133,7 @@ function RepoEmptyState({
       <div className="flex justify-center">
         <RepoMark repoId={repo.id} name={repo.name} size="lg" />
       </div>
-      <h2 className="mt-5 font-display text-2xl font-semibold text-chalk">Ask about {repo.name}</h2>
+      <h2 className="mt-5 display text-2xl text-chalk">Ask about {repo.name}</h2>
       <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-mist">
         {repo.description} Answers come only from its indexed code, tests, commits, and pull requests, with every claim
         linked to GitHub.
@@ -239,7 +239,7 @@ export function AskPage() {
   if (!repo) {
     return (
       <div className="mx-auto max-w-xl px-4 py-24 text-center">
-        <h1 className="font-display text-2xl font-semibold text-chalk">Repository not found</h1>
+        <h1 className="display text-2xl text-chalk">Repository not found</h1>
         <p className="mt-3 text-mist">There's no repository called “{repoId}” here.</p>
         <Link to="/repos" className="mt-6 inline-block text-sm font-semibold text-glow hover:text-chalk">
           Browse repositories <span aria-hidden="true">→</span>

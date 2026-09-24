@@ -16,7 +16,7 @@ export function SiteFooter() {
       <div aria-hidden="true" className="bg-grid absolute inset-0 opacity-40 mask-[radial-gradient(70%_100%_at_50%_0%,black,transparent)]" />
       <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.6fr_1fr_1fr]">
         <div>
-          <Link to="/" className="inline-flex items-center gap-3 font-display font-semibold text-chalk">
+          <Link to="/" className="inline-flex items-center gap-3 display text-xl text-chalk">
             <Logo className="size-8" />
             {SITE_NAME}
           </Link>
@@ -25,7 +25,7 @@ export function SiteFooter() {
           </p>
         </div>
         <div>
-          <h2 className="font-display text-sm font-semibold text-chalk">Explore</h2>
+          <h2 className="text-sm font-medium text-chalk">Explore</h2>
           <ul className="mt-4 space-y-2.5 text-sm">
             {EXPLORE_LINKS.map((link) => (
               <li key={link.to}>
@@ -37,7 +37,7 @@ export function SiteFooter() {
           </ul>
         </div>
         <div>
-          <h2 className="font-display text-sm font-semibold text-chalk">Built with</h2>
+          <h2 className="text-sm font-medium text-chalk">Built with</h2>
           <ul className="mt-4 space-y-2.5 text-sm text-mist">
             {BUILT_WITH.map((item) => (
               <li key={item}>{item}</li>

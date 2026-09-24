@@ -112,7 +112,7 @@ export function HowItWorksPage() {
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
           <Reveal>
             <p className="font-mono text-xs tracking-[0.2em] text-glow uppercase">How it works</p>
-            <h1 className="mt-3 max-w-3xl font-display text-4xl font-semibold tracking-tight text-balance text-chalk sm:text-5xl">
+            <h1 className="mt-3 max-w-3xl display text-4xl text-balance text-chalk sm:text-5xl">
               A retrieval pipeline that has to <span className="text-aurora">show its sources</span>
             </h1>
             <p className="mt-5 max-w-2xl leading-relaxed text-mist">
@@ -122,7 +122,7 @@ export function HowItWorksPage() {
             <dl className="mt-10 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
               {liveStats.map((stat) => (
                 <div key={stat.label} className="glass rounded-xl px-4 py-3">
-                  <dd className="font-display text-2xl font-semibold tracking-tight text-chalk tabular-nums">
+                  <dd className="display text-2xl text-chalk tabular-nums">
                     {stat.value === undefined ? "—" : formatNumber(stat.value)}
                   </dd>
                   <dt className="mt-1 font-mono text-[0.7rem] tracking-wider text-mist/80 uppercase">{stat.label}</dt>
@@ -135,13 +135,13 @@ export function HowItWorksPage() {
 
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
         <Reveal>
-          <h2 className="font-display text-2xl font-semibold tracking-tight text-chalk">Indexing, ahead of time</h2>
+          <h2 className="display text-2xl text-chalk">Indexing, ahead of time</h2>
           <p className="mt-2 text-sm text-mist">Runs once per repository, in batches budgeted against the daily quota.</p>
           <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {INDEXING_STAGES.map((stage, index) => (
               <li key={stage.title} className="glass glass-hover relative rounded-2xl p-5">
                 <span className="font-mono text-xs text-glow">{String(index + 1).padStart(2, "0")}</span>
-                <h3 className="mt-1.5 font-display text-sm font-semibold text-chalk">{stage.title}</h3>
+                <h3 className="mt-1.5 display text-sm text-chalk">{stage.title}</h3>
                 <p className="mt-1.5 text-xs leading-relaxed text-mist">{stage.detail}</p>
                 {index < INDEXING_STAGES.length - 1 && (
                   <span aria-hidden="true" className="absolute top-1/2 -right-2.5 hidden text-mist/50 lg:block">
@@ -154,7 +154,7 @@ export function HowItWorksPage() {
         </Reveal>
 
         <Reveal className="mt-16">
-          <h2 className="font-display text-2xl font-semibold tracking-tight text-chalk">Answering, per question</h2>
+          <h2 className="display text-2xl text-chalk">Answering, per question</h2>
           <p className="mt-2 text-sm text-mist">
             Runs in seconds, every time you ask. Each sphere below is a stage; the motes travelling between them are chunks
             of your repository moving through the pipeline.
@@ -177,13 +177,13 @@ export function HowItWorksPage() {
       <section className="relative border-y border-white/5 bg-deep/50">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
           <Reveal>
-            <h2 className="font-display text-3xl font-semibold tracking-tight text-chalk">Each stage in detail</h2>
+            <h2 className="display text-3xl text-chalk">Each stage in detail</h2>
           </Reveal>
           <div className="mt-12 grid gap-x-12 gap-y-10 md:grid-cols-2">
             {SECTIONS.map((section, index) => (
               <Reveal key={section.title} delay={(index % 2) * 80}>
                 <article>
-                  <h3 className="flex items-baseline gap-3 font-display font-semibold text-chalk">
+                  <h3 className="flex items-baseline gap-3 display text-chalk">
                     <span className="font-mono text-xs text-glow">{String(index + 1).padStart(2, "0")}</span>
                     {section.title}
                   </h3>
@@ -201,7 +201,7 @@ export function HowItWorksPage() {
 
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
         <Reveal>
-          <h2 className="font-display text-3xl font-semibold tracking-tight text-chalk">Built to run on free tiers</h2>
+          <h2 className="display text-3xl text-chalk">Built to run on free tiers</h2>
           <p className="mt-3 max-w-2xl text-mist">
             Every service here runs on a free plan, and each one has limits the design had to respect.
           </p>
@@ -210,7 +210,7 @@ export function HowItWorksPage() {
           {CONSTRAINTS.map((constraint, index) => (
             <Reveal key={constraint.title} delay={(index % 2) * 80}>
               <div className="glass glass-hover h-full rounded-2xl p-6">
-                <h3 className="font-display font-semibold text-chalk">{constraint.title}</h3>
+                <h3 className="display text-chalk">{constraint.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-mist">{constraint.body}</p>
               </div>
             </Reveal>
@@ -220,7 +220,7 @@ export function HowItWorksPage() {
 
       <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6">
         <Reveal>
-          <h2 className="font-display text-3xl font-semibold tracking-tight text-chalk">Tech stack</h2>
+          <h2 className="display text-3xl text-chalk">Tech stack</h2>
           <div className="glass mt-6 overflow-x-auto rounded-2xl">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-white/8 font-mono text-[0.7rem] tracking-wider text-mist/80 uppercase">

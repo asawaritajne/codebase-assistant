@@ -22,7 +22,7 @@ export function ErrorCard({ kind, message, onRetry }: ErrorCardProps) {
 
   return (
     <div role="alert" className="rounded-2xl border border-ember/25 bg-ember/10 px-5 py-4 text-sm backdrop-blur">
-      <p className="font-display font-semibold text-ember">{TITLES[kind]}</p>
+      <p className="font-medium text-ember">{TITLES[kind]}</p>
       <p className="mt-1 text-chalk/80">{message}</p>
       {retryable && onRetry && (
         <button

@@ -42,7 +42,7 @@ export function AnswerPreview() {
         <div className="flex items-center gap-2.5">
           <RepoMark repoId="react-hook-form" name="React Hook Form" size="sm" />
           <div>
-            <p className="font-display text-sm font-semibold text-chalk">React Hook Form</p>
+            <p className="text-sm font-medium text-chalk">React Hook Form</p>
             <p className="font-mono text-[0.7rem] text-mist/80">example answer</p>
           </div>
         </div>

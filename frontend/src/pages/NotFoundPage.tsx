@@ -8,7 +8,7 @@ export function NotFoundPage() {
       <div aria-hidden="true" className="bg-grid absolute inset-0 opacity-40 mask-[radial-gradient(60%_60%_at_50%_50%,black,transparent)]" />
       <div className="relative text-center">
         <p className="font-mono text-sm text-glow">404</p>
-        <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-chalk">Lost in the vector space</h1>
+        <h1 className="mt-3 display text-4xl text-chalk">Lost in the vector space</h1>
         <p className="mt-4 text-mist">That page doesn't exist, but the codebases do.</p>
         <div className="mt-9 flex flex-wrap justify-center gap-3">
           <Link

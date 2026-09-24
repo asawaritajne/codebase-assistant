@@ -38,7 +38,7 @@ export function SharedAnswerPage() {
       <div className="relative mx-auto w-full max-w-3xl px-4 py-14 sm:px-6">
         {error ? (
           <div className="text-center">
-            <h1 className="font-display text-2xl font-semibold text-chalk">Answer not found</h1>
+            <h1 className="display text-2xl text-chalk">Answer not found</h1>
             <p className="mt-3 text-mist">{error}</p>
             <Link to="/repos" className="mt-6 inline-block text-sm font-semibold text-glow hover:text-chalk">
               Browse repositories <span aria-hidden="true">→</span>
@@ -51,7 +51,7 @@ export function SharedAnswerPage() {
         ) : (
           <>
             <p className="font-mono text-xs tracking-[0.2em] text-glow uppercase">Shared answer</p>
-            <h1 className="mt-3 font-display text-2xl font-semibold tracking-tight text-balance text-chalk sm:text-3xl">
+            <h1 className="mt-3 display text-2xl text-balance text-chalk sm:text-3xl">
               {answer.question}
             </h1>
             <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-mist">

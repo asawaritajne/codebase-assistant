@@ -2,9 +2,10 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
-  --font-display: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* An editorial serif over technical mono — deliberately not the usual geometric-sans dev-tool look. */
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-sans: "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Deep space base, lit by three accents. */
   --color-void: #05060f;
@@ -15,6 +16,26 @@
   --color-glow: #22d3ee;
   --color-iris: #8b5cf6;
   --color-ember: #fb7185;
+}
+
+/* Serif headlines sit better a touch tighter and with normal weight. */
+@utility display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+/* A catalogue row: hairline rules and a colour bar that lights up on hover. */
+@utility row-entry {
+  border-bottom: 1px solid rgb(255 255 255 / 0.07);
+  transition:
+    background-color 200ms ease,
+    padding-left 200ms ease;
+
+  &:hover {
+    background-color: rgb(255 255 255 / 0.03);
+  }
 }
 
 /* Frosted panel used instead of solid cards, so the 3D behind it stays visible. */

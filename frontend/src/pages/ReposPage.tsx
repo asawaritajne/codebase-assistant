@@ -1,5 +1,5 @@
 import { LoadError } from "../components/LoadError";
-import { RepoCard, RepoCardSkeleton } from "../components/repos/RepoCard";
+import { RepoIndex, RepoIndexSkeleton } from "../components/repos/RepoIndex";
 import { Reveal } from "../components/Reveal";
 import { catalogTotals, formatNumber } from "../lib/format";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
@@ -12,41 +12,40 @@ export function ReposPage() {
 
   return (
     <div className="relative">
-      <div aria-hidden="true" className="bg-grid absolute inset-x-0 top-0 h-80 opacity-40 mask-[linear-gradient(to_bottom,black,transparent)]" />
-      <div className="relative mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 md:py-24">
-        <Reveal className="max-w-2xl">
-          <p className="font-mono text-xs tracking-[0.2em] text-glow uppercase">Repositories</p>
-          <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-balance text-chalk sm:text-5xl">
-            Pick a codebase to explore
-          </h1>
-          <p className="mt-5 leading-relaxed text-mist">
-            For each repository, the source and tests, the 200 most recent commits, and the 100 most recently merged pull
-            requests are indexed for search. New repositories come online gradually: the free embedding quota covers about a
-            thousand chunks a day.
-          </p>
+      <div aria-hidden="true" className="bg-grid absolute inset-x-0 top-0 h-80 opacity-30 mask-[linear-gradient(to_bottom,black,transparent)]" />
+      <div className="relative mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 md:py-24">
+        <Reveal>
+          <div className="flex flex-wrap items-end justify-between gap-6 border-b border-white/10 pb-8">
+            <div className="max-w-2xl">
+              <p className="font-mono text-xs tracking-[0.25em] text-glow uppercase">The catalogue</p>
+              <h1 className="display mt-4 text-5xl text-chalk sm:text-6xl">
+                Thirteen codebases,
+                <br />
+                <span className="text-aurora italic">indexed line by line.</span>
+              </h1>
+            </div>
+            <p className="max-w-sm text-sm leading-relaxed text-mist">
+              Source and tests, the 200 most recent commits, and the 100 most recently merged pull requests of each. New
+              entries arrive gradually — the free embedding quota covers about a thousand chunks a day.
+            </p>
+          </div>
           {totals && (
-            <p className="mt-6 font-mono text-xs text-mist/80">
-              {formatNumber(totals.repos)} repositories · {formatNumber(totals.chunks)} searchable chunks ·{" "}
+            <p className="mt-6 font-mono text-xs text-mist/70">
+              {formatNumber(totals.repos)} repositories / {formatNumber(totals.chunks)} chunks /{" "}
               {formatNumber(totals.history)} commits & pull requests
             </p>
           )}
         </Reveal>
 
-        <div className="mt-12">
+        <div className="mt-10">
           {error ? (
             <div className="max-w-xl">
               <LoadError message={error} onRetry={reload} />
             </div>
+          ) : repos ? (
+            <RepoIndex repos={repos} />
           ) : (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {repos
-                ? repos.map((repo, index) => (
-                    <Reveal key={repo.id} delay={Math.min(index, 6) * 60}>
-                      <RepoCard repo={repo} />
-                    </Reveal>
-                  ))
-                : [0, 1, 2, 3, 4, 5].map((n) => <RepoCardSkeleton key={n} />)}
-            </div>
+            <RepoIndexSkeleton />
           )}
         </div>
       </div>
