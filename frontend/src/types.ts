@@ -138,3 +138,54 @@ export interface QualityMetrics {
     rating: Rating | null;
   }[];
 }
+
+/** One file retrieved by the benchmark, best chunk per file. */
+export interface RetrievedFile {
+  title: string;
+  type: string;
+  score: number;
+  sourceUrl: string;
+}
+
+export interface EvalScore {
+  cases: number;
+  hitAt1: number;
+  hitAt3: number;
+  hitAt5: number;
+  /** Mean reciprocal rank: 1.0 means every question's file came first. */
+  mrr: number;
+  misses: number;
+}
+
+export interface EvalCaseResult {
+  id: string;
+  repoId: string;
+  question: string;
+  /** Files that count as a hit, named before the run. */
+  expect: string[];
+  because: string;
+  retrieved: RetrievedFile[];
+  rank: number | null;
+  baseline?: RetrievedFile[];
+  rankBaseline?: number | null;
+  skipped?: string;
+}
+
+/** A retrieval benchmark run (backend/src/eval/run.ts), shown on /evaluation. */
+export interface EvalRun {
+  startedAt: string;
+  finishedAt: string;
+  embeddingModel: string;
+  limit: number;
+  policy?: "baseline" | "non-test-floor";
+  embeddedQuestions?: number;
+  overall: EvalScore;
+  overallBaseline?: EvalScore;
+  repos: (EvalScore & { repoId: string; repo: string })[];
+  results: EvalCaseResult[];
+}
+
+export interface EvaluationResponse {
+  run: EvalRun | null;
+  totalCases: number;
+}

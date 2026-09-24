@@ -2,6 +2,7 @@ import type {
   AskResponse,
   ConversationTurn,
   EmbeddingMap,
+  EvaluationResponse,
   MapQueryResult,
   QualityMetrics,
   Rating,
@@ -119,4 +120,8 @@ export function sendFeedback(shareId: string, rating: Rating): Promise<{ ok: boo
     },
     REPOS_TIMEOUT_MS,
   );
+}
+
+export function fetchEvaluation(): Promise<EvaluationResponse> {
+  return request<EvaluationResponse>("/evaluation", {}, REPOS_TIMEOUT_MS);
 }

@@ -6,7 +6,7 @@ const EXPLORE_LINKS = [
   { to: "/", label: "Home" },
   { to: "/repos", label: "Repositories" },
   { to: "/how-it-works", label: "How it works" },
-  { to: "/quality", label: "Answer quality" },
+  { to: "/evaluation", label: "Evaluation" },
 ];
 
 const BUILT_WITH = ["React + TypeScript", "three.js", "Node.js + Express", "MongoDB Atlas Vector Search", "Google Gemini"];

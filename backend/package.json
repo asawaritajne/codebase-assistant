@@ -14,7 +14,8 @@
     "ingest": "tsx src/scripts/ingest.ts",
     "embed": "tsx src/scripts/embed.ts",
     "test": "tsx --test $(find src -name \"*.test.ts\")",
-    "map": "tsx src/scripts/map.ts"
+    "map": "tsx src/scripts/map.ts",
+    "eval": "tsx src/scripts/eval.ts"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",

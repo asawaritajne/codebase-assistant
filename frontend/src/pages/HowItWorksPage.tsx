@@ -210,8 +210,8 @@ export function HowItWorksPage() {
           </div>
           <p className="mt-3 text-xs text-mist/70">
             Hover a sphere or its caption to isolate that stage.{" "}
-            <Link to="/quality" className="text-glow transition-colors hover:text-chalk">
-              See the full quality record <span aria-hidden="true">→</span>
+            <Link to="/evaluation" className="text-glow transition-colors hover:text-chalk">
+              See how retrieval scores on the benchmark <span aria-hidden="true">→</span>
             </Link>
           </p>
         </Reveal>

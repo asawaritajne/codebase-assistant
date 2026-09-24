@@ -3,8 +3,8 @@ import { Layout } from "./components/layout/Layout";
 import { AskPage } from "./pages/AskPage";
 import { HomePage } from "./pages/HomePage";
 import { HowItWorksPage } from "./pages/HowItWorksPage";
+import { EvaluationPage } from "./pages/EvaluationPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
-import { QualityPage } from "./pages/QualityPage";
 import { ReposPage } from "./pages/ReposPage";
 import { SharedAnswerPage } from "./pages/SharedAnswerPage";
 import { ReposProvider } from "./repos/ReposContext";
@@ -20,7 +20,8 @@ export default function App() {
             <Route path="ask" element={<Navigate to="/ask/react-hook-form" replace />} />
             <Route path="ask/:repoId" element={<AskPage />} />
             <Route path="how-it-works" element={<HowItWorksPage />} />
-            <Route path="quality" element={<QualityPage />} />
+            <Route path="evaluation" element={<EvaluationPage />} />
+            <Route path="quality" element={<Navigate to="/evaluation" replace />} />
             <Route path="a/:id" element={<SharedAnswerPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>

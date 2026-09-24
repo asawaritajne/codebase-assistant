@@ -8,6 +8,12 @@ import { checkCitations, needsRegeneration, type CitationReport } from "./citati
 import { recordQuery } from "./history.js";
 
 export const DEFAULT_SOURCE_LIMIT = 5;
+/**
+ * Slots of the five reserved for implementation rather than tests. The retrieval benchmark found
+ * questions where all five retrieved chunks were test files, leaving the answer with no
+ * implementation to cite (see backend/src/eval/dataset.ts).
+ */
+export const NON_TEST_FLOOR = 3;
 /** Older turns add little and cost prompt space, so only the most recent ones are carried. */
 export const MAX_HISTORY_TURNS = 3;
 
@@ -121,7 +127,11 @@ export async function answerQuestion(
   const queryVector = await embedder.embedQuery(retrievalText);
 
   const retrievalStartedAt = Date.now();
-  const chunks = await retrieveRelevantChunks(db, queryVector, { limit, filter: { repo, ...filter } });
+  const chunks = await retrieveRelevantChunks(db, queryVector, {
+    limit,
+    filter: { repo, ...filter },
+    minNonTest: NON_TEST_FLOOR,
+  });
   const retrievalMs = Date.now() - retrievalStartedAt;
 
   const grounded: GroundedAnswer =

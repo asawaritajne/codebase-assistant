@@ -7,7 +7,7 @@ import { Logo } from "./Logo";
 const NAV_ITEMS = [
   { to: "/repos", label: "Repositories" },
   { to: "/how-it-works", label: "How it works" },
-  { to: "/quality", label: "Quality" },
+  { to: "/evaluation", label: "Evaluation" },
 ];
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>

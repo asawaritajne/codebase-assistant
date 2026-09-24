@@ -8,6 +8,7 @@ import { GeminiGenerator } from "./generation/gemini.js";
 import { GitHubClient } from "./ingestion/github.js";
 import { RepoCatalog } from "./repos/catalog.js";
 import { createAskRouter } from "./routes/ask.js";
+import { createEvaluationRouter } from "./routes/evaluation.js";
 import { createIngestRouter } from "./routes/ingest.js";
 import { createMapRouter } from "./routes/map.js";
 import { createQualityRouter } from "./routes/quality.js";
@@ -34,6 +35,7 @@ app.use(createReposRouter(catalog));
 app.use(createMapRouter(db, embedder));
 app.use(createAskRouter(db, embedder, generator));
 app.use(createQualityRouter(db));
+app.use(createEvaluationRouter(db));
 app.use(createIngestRouter(db, github, catalog));
 
 const handleError: ErrorRequestHandler = (error, _req, res, _next) => {
