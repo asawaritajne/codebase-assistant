@@ -62,7 +62,8 @@ export function SharedAnswerPage() {
             </div>
 
             <div className="mt-8">
-              <AnswerCard response={{ ...answer, shareId: null }} />
+              {/* Its own id, so a reader landing here can still say whether it helped. */}
+              <AnswerCard response={{ ...answer, shareId: answer.id }} shareable={false} />
             </div>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">

@@ -109,3 +109,32 @@ export interface MapQueryResult {
   position: [number, number, number];
   neighbours: MapQueryNeighbour[];
 }
+
+/** A reader's verdict on one answer. */
+export type Rating = "up" | "down";
+
+/** Aggregate answer quality (backend/src/qa/quality.ts), shown on /quality. */
+export interface QualityMetrics {
+  answers: number;
+  since: string | null;
+  until: string | null;
+  citations: { passed: number; flagged: number; passRate: number };
+  regeneration: { count: number; rate: number };
+  sources: { retrieved: number; cited: number; citedRate: number };
+  latency: { medianMs: number; p95Ms: number; medianRetrievalMs: number };
+  feedback: { up: number; down: number; rated: number; helpfulRate: number };
+  models: { model: string; answers: number }[];
+  repos: { repoId: string; repo: string; answers: number; passRate: number; medianMs: number; up: number; down: number }[];
+  daily: { date: string; answers: number; flagged: number }[];
+  recent: {
+    id: string;
+    question: string;
+    repoId: string;
+    repo: string;
+    createdAt: string;
+    valid: boolean;
+    regenerated: boolean;
+    latencyMs: number;
+    rating: Rating | null;
+  }[];
+}

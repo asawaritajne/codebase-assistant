@@ -3,6 +3,7 @@ import Markdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CITATION_HREF_PREFIX, linkCitations } from "../lib/citations";
 import type { AnswerSource, AskResponse } from "../types";
+import { AnswerFeedback } from "./AnswerFeedback";
 import { ShareAnswer } from "./ShareAnswer";
 import { SourcesPanel } from "./SourcesPanel";
 
@@ -58,7 +59,11 @@ function CitationNotice({ response }: { response: AskResponse }) {
   );
 }
 
-export function AnswerCard({ response }: { response: AskResponse }) {
+/**
+ * One answer with its citations, sources, and controls. `shareable` is off on the permanent page
+ * for an answer, which is already the thing a share link points at — but rating it still applies.
+ */
+export function AnswerCard({ response, shareable = true }: { response: AskResponse; shareable?: boolean }) {
   const markdown = useMemo(() => linkCitations(response.answer), [response.answer]);
 
   const components = useMemo<Components>(() => {
@@ -91,7 +96,12 @@ export function AnswerCard({ response }: { response: AskResponse }) {
           {(response.latencyMs / 1000).toFixed(1)}s · {response.model}
           {response.regenerated && " · regenerated to fix its citations"}
         </p>
-        {response.shareId && <ShareAnswer shareId={response.shareId} />}
+        {shareable && response.shareId && <ShareAnswer shareId={response.shareId} />}
+        {response.shareId && (
+          <div className="ml-auto">
+            <AnswerFeedback shareId={response.shareId} />
+          </div>
+        )}
       </div>
       <SourcesPanel sources={response.sources} />
     </article>

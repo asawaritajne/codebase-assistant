@@ -3,6 +3,8 @@ import type {
   ConversationTurn,
   EmbeddingMap,
   MapQueryResult,
+  QualityMetrics,
+  Rating,
   RepoSummary,
   SharedAnswer,
 } from "./types";
@@ -100,4 +102,21 @@ export async function fetchRepos(): Promise<RepoSummary[]> {
 
 export function fetchEmbeddingMap(): Promise<EmbeddingMap> {
   return request<EmbeddingMap>("/embedding-map", {}, REPOS_TIMEOUT_MS);
+}
+
+export function fetchQuality(): Promise<QualityMetrics> {
+  return request<QualityMetrics>("/quality", {}, REPOS_TIMEOUT_MS);
+}
+
+/** Records whether an answer helped. Fire-and-forget: a failure never blocks the reader. */
+export function sendFeedback(shareId: string, rating: Rating): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>(
+    `/answers/${shareId}/feedback`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rating }),
+    },
+    REPOS_TIMEOUT_MS,
+  );
 }

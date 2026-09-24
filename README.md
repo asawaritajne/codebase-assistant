@@ -72,6 +72,13 @@ Design decisions worth calling out:
 - **The index is visible.** Every embedded chunk is projected from 768 dimensions to 3 with PCA and
   rendered as an interactive point cloud, so “search by meaning” is something you can look at — and a
   live question can be placed in that same space, lit up against the chunks it retrieves.
+- **Quality is measured, not claimed.** Every answer is stored with its citation report, timings, and
+  the model that produced it; readers can rate it. `/quality` publishes the aggregate — citation pass
+  rate, regeneration rate, median and p95 latency, per-repository breakdown, and the answers that
+  failed — including the unflattering numbers.
+- **The diagrams carry real data.** The 3D answering pipeline is sized by what actually flows through
+  it: the search stage holds the whole index, the answer stage holds five sources, and the numbers
+  under each stage come from the live system rather than the copy.
 
 ## Tech stack
 
@@ -158,6 +165,8 @@ access token with `public_repo` scope.
 | `POST /ask` | `{ "repo", "question", "history" }` → answer, sources, citation report, share id |
 | `GET /answers/:id` | One stored answer with its sources, behind every share link |
 | `POST /embedding-map/query` | Places a question in the 3D map and names the chunks it retrieves |
+| `GET /quality` | Aggregate answer quality: citations, regenerations, latency, ratings |
+| `POST /answers/:id/feedback` | `{ "rating": "up" \| "down" }` → records a reader's verdict |
 | `POST /ingest/:repoId` | Re-ingest one repository (protect before deploying) |
 
 ## Project layout
@@ -169,19 +178,19 @@ backend/
   src/embedding/   chunker, Gemini embedder, vector storage
   src/retrieval/   Atlas Vector Search queries
   src/generation/  prompt + answer generation
-  src/qa/          the RAG pipeline, citation checking, query history
+  src/qa/          the RAG pipeline, citation checking, query history, quality metrics
   src/visualization/  PCA projection of embeddings to 3D
   src/routes/      Express routes
 frontend/
-  src/pages/       home, repositories, ask, how it works
-  src/components/  layout, repo cards, answer rendering, sources panel
+  src/pages/       home, repositories, ask, how it works, answer quality
+  src/components/  layout, repo index, answer rendering, sources, feedback
   src/galaxy/      the 3D embedding visualization (three.js, lazy-loaded)
 ```
 
 ## Tests
 
 ```bash
-cd backend && npm test        # citation parsing + regeneration logic
+cd backend && npm test        # citation parsing, regeneration logic, quality metrics
 npm run typecheck             # both backend and frontend
 ```
 

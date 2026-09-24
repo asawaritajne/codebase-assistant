@@ -1,10 +1,13 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { fetchQuality } from "../api";
 import { Reveal } from "../components/Reveal";
 import { GalaxySection } from "../galaxy/GalaxySection";
 import { Pipeline3D, type PipelineStage } from "../galaxy/Pipeline3D";
 import { catalogTotals, formatNumber } from "../lib/format";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 import { useRepos } from "../repos/ReposContext";
+import type { QualityMetrics } from "../types";
 
 const INDEXING_STAGES: PipelineStage[] = [
   { title: "GitHub REST API", detail: "Source files and tests, the last 200 commits, and the last 100 merged pull requests." },
@@ -13,12 +16,47 @@ const INDEXING_STAGES: PipelineStage[] = [
   { title: "Atlas Vector Search", detail: "Vectors indexed for cosine similarity, filterable by repository." },
 ];
 
-const ANSWERING_STAGES: PipelineStage[] = [
-  { title: "Your question", detail: "Embedded with the same model, so it can be compared with the chunks." },
-  { title: "Vector search", detail: "The five closest chunks from the chosen repository are retrieved." },
-  { title: "Grounded answer", detail: "Gemini answers from those chunks alone, citing a source for every claim." },
-  { title: "Citation check", detail: "Citations are verified; a failing answer is rewritten or flagged." },
-];
+/**
+ * The answering pipeline, carrying this system's own numbers. The weights are the share of data at
+ * each stage — the whole index at search, five sources at generation, one answer at the end — which
+ * is what sizes the spheres and the traffic between them.
+ */
+function answeringStages(chunks: number | undefined, quality: QualityMetrics | null): PipelineStage[] {
+  const measured = quality && quality.answers > 0 ? quality : null;
+  return [
+    {
+      title: "Your question",
+      value: "768",
+      unit: "numbers",
+      detail: "Embedded with the same model as the code, so the two can be compared at all.",
+      weight: 0.14,
+    },
+    {
+      title: "Vector search",
+      value: chunks === undefined ? "—" : formatNumber(chunks),
+      unit: "chunks searched",
+      note: measured ? `${measured.latency.medianRetrievalMs}ms median` : undefined,
+      detail: "Atlas ranks the indexed chunks of the chosen repository by closeness and keeps the best five.",
+      weight: 1,
+    },
+    {
+      title: "Grounded answer",
+      value: "5",
+      unit: "sources used",
+      note: measured ? `${(measured.latency.medianMs / 1000).toFixed(1)}s median` : undefined,
+      detail: "Gemini writes from those five chunks alone, citing a source for every claim it makes.",
+      weight: 0.42,
+    },
+    {
+      title: "Citation check",
+      value: measured ? `${measured.citations.passRate}%` : "—",
+      unit: "passed",
+      note: measured ? `${measured.regeneration.count} rewritten` : undefined,
+      detail: "Citations are verified against the retrieved sources; a failing answer is rewritten or flagged.",
+      weight: 0.18,
+    },
+  ];
+}
 
 const SECTIONS = [
   {
@@ -97,6 +135,13 @@ export function HowItWorksPage() {
   useDocumentTitle("How it works");
   const { repos } = useRepos();
   const totals = repos ? catalogTotals(repos) : null;
+  // The pipeline shows real measurements; if they can't be loaded it falls back to structure alone.
+  const [quality, setQuality] = useState<QualityMetrics | null>(null);
+  useEffect(() => {
+    void fetchQuality()
+      .then(setQuality)
+      .catch(() => setQuality(null));
+  }, []);
 
   const liveStats = [
     { label: "repositories", value: totals?.repos },
@@ -155,13 +200,20 @@ export function HowItWorksPage() {
 
         <Reveal className="mt-16">
           <h2 className="display text-2xl text-chalk">Answering, per question</h2>
-          <p className="mt-2 text-sm text-mist">
-            Runs in seconds, every time you ask. Each sphere below is a stage; the motes travelling between them are chunks
-            of your repository moving through the pipeline.
+          <p className="mt-2 max-w-3xl text-sm text-mist">
+            Runs in seconds, every time you ask. Each sphere is a stage, sized by how much data it holds: the search
+            sphere carries the whole index, the last one carries a single answer. The motes between them thin out as the
+            pipeline narrows, and every number below is this system's own, measured on real questions.
           </p>
           <div className="mt-6">
-            <Pipeline3D stages={ANSWERING_STAGES} />
+            <Pipeline3D stages={answeringStages(totals?.chunks, quality)} />
           </div>
+          <p className="mt-3 text-xs text-mist/70">
+            Hover a sphere or its caption to isolate that stage.{" "}
+            <Link to="/quality" className="text-glow transition-colors hover:text-chalk">
+              See the full quality record <span aria-hidden="true">→</span>
+            </Link>
+          </p>
         </Reveal>
       </section>
 
