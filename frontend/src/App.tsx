@@ -5,6 +5,7 @@ import { HomePage } from "./pages/HomePage";
 import { HowItWorksPage } from "./pages/HowItWorksPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ReposPage } from "./pages/ReposPage";
+import { SharedAnswerPage } from "./pages/SharedAnswerPage";
 import { ReposProvider } from "./repos/ReposContext";
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
             <Route path="ask" element={<Navigate to="/ask/react-hook-form" replace />} />
             <Route path="ask/:repoId" element={<AskPage />} />
             <Route path="how-it-works" element={<HowItWorksPage />} />
+            <Route path="a/:id" element={<SharedAnswerPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

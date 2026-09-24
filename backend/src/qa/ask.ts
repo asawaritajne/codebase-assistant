@@ -1,14 +1,15 @@
 import type { Db } from "mongodb";
-import { withMongoRetry } from "../db/mongo.js";
 import { EMBEDDING_MODEL, type GeminiEmbedder } from "../embedding/gemini.js";
 import type { GeminiGenerator } from "../generation/gemini.js";
-import { ANSWER_SYSTEM_INSTRUCTION, buildAnswerPrompt } from "../generation/prompt.js";
+import { ANSWER_SYSTEM_INSTRUCTION, buildAnswerPrompt, type ConversationTurn } from "../generation/prompt.js";
 import type { SourceType } from "../ingestion/types.js";
 import { retrieveRelevantChunks, type RetrievedChunk } from "../retrieval/search.js";
 import { checkCitations, needsRegeneration, type CitationReport } from "./citations.js";
+import { recordQuery } from "./history.js";
 
-export const QUERY_HISTORY_COLLECTION = "query_history";
 export const DEFAULT_SOURCE_LIMIT = 5;
+/** Older turns add little and cost prompt space, so only the most recent ones are carried. */
+export const MAX_HISTORY_TURNS = 3;
 
 const NO_SOURCES_ANSWER =
   "I couldn't find anything relevant in the indexed sources for this repository, so I can't answer that question. Try rephrasing it, or check that the ingestion and embedding steps have run.";
@@ -42,12 +43,18 @@ export interface AskResult {
   embeddingModel: string;
   retrievalMs: number;
   latencyMs: number;
+  /** Id of the stored answer, for its permanent link; null if it couldn't be recorded. */
+  shareId: string | null;
 }
 
 export interface AskOptions {
   question: string;
   /** Repository ("owner/name") whose chunks are searched; also named in the prompt. */
   repo: string;
+  /** Repository id, stored with the answer so a shared link knows where it came from. */
+  repoId: string;
+  /** Earlier turns of this conversation, oldest first. */
+  history?: ConversationTurn[];
   limit?: number;
   /** Optional Atlas pre-filter, e.g. { isTest: false }. */
   filter?: Record<string, unknown>;
@@ -71,8 +78,9 @@ export async function generateGroundedAnswer(
   repo: string,
   question: string,
   chunks: RetrievedChunk[],
+  history: ConversationTurn[] = [],
 ): Promise<GroundedAnswer> {
-  const prompt = buildAnswerPrompt(repo, question, chunks);
+  const prompt = buildAnswerPrompt(repo, question, chunks, history);
   const { text: answer, model } = await generator.generate(ANSWER_SYSTEM_INSTRUCTION, prompt);
   const citations = checkCitations(answer, chunks.length);
   if (!needsRegeneration(citations)) return { answer, citations, regenerated: false, model };
@@ -101,10 +109,16 @@ export async function answerQuestion(
   db: Db,
   embedder: GeminiEmbedder,
   generator: AnswerGenerator,
-  { question, repo, limit = DEFAULT_SOURCE_LIMIT, filter }: AskOptions,
+  { question, repo, repoId, history = [], limit = DEFAULT_SOURCE_LIMIT, filter }: AskOptions,
 ): Promise<AskResult> {
   const startedAt = Date.now();
-  const queryVector = await embedder.embedQuery(question);
+  const recent = history.slice(-MAX_HISTORY_TURNS);
+
+  // A follow-up like "and what about caching?" is meaningless on its own, so the previous question
+  // rides along when searching — no extra model call, which keeps the free quota for answers.
+  const previous = recent.at(-1)?.question;
+  const retrievalText = previous ? `${previous} ${question}` : question;
+  const queryVector = await embedder.embedQuery(retrievalText);
 
   const retrievalStartedAt = Date.now();
   const chunks = await retrieveRelevantChunks(db, queryVector, { limit, filter: { repo, ...filter } });
@@ -119,9 +133,9 @@ export async function answerQuestion(
           regenerated: false,
           model: "none",
         }
-      : await generateGroundedAnswer(generator, repo, question, chunks);
+      : await generateGroundedAnswer(generator, repo, question, chunks, recent);
 
-  const result: AskResult = {
+  const result: Omit<AskResult, "shareId"> = {
     question,
     ...grounded,
     sources: chunks.map((chunk, index) => {
@@ -137,41 +151,9 @@ export async function answerQuestion(
 
   const citationStatus = result.citations.valid ? "citations ok" : "citations flagged";
   console.log(
-    `[ask] ${JSON.stringify(question)} -> ${chunks.length} sources, ${citationStatus}` +
-      `${result.regenerated ? " after regenerating" : ""}, ${result.latencyMs}ms`,
+    `[ask] ${JSON.stringify(question)}${recent.length > 0 ? ` (follow-up, ${recent.length} prior)` : ""} -> ` +
+      `${chunks.length} sources, ${citationStatus}${result.regenerated ? " after regenerating" : ""}, ${result.latencyMs}ms`,
   );
 
-  await recordQuery(db, result);
-  return result;
-}
-
-/** Keeps a log of questions and answers for reviewing answer quality later. */
-async function recordQuery(db: Db, result: AskResult): Promise<void> {
-  try {
-    await withMongoRetry("Recording query history", async () => {
-      await db.collection(QUERY_HISTORY_COLLECTION).insertOne({
-        question: result.question,
-        answer: result.answer,
-        // Chunk text is already in embedded_chunks; the history keeps just the references.
-        sources: result.sources.map(({ marker, type, title, sourceUrl, score, cited }) => ({
-          marker,
-          type,
-          title,
-          sourceUrl,
-          score,
-          cited,
-        })),
-        citations: result.citations,
-        regenerated: result.regenerated,
-        model: result.model,
-        embeddingModel: result.embeddingModel,
-        retrievalMs: result.retrievalMs,
-        latencyMs: result.latencyMs,
-        createdAt: new Date(),
-      });
-    });
-  } catch (error) {
-    // History is a nicety; never fail a good answer because logging it didn't work.
-    console.warn(`[ask] Could not record query history: ${error instanceof Error ? error.message : String(error)}`);
-  }
+  return { ...result, shareId: await recordQuery(db, repoId, repo, result) };
 }

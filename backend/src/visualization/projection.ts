@@ -10,8 +10,19 @@
 const ITERATIONS = 40;
 /** Scaling ignores the most extreme 1% so a few outliers can't squash everything into the centre. */
 const OUTLIER_PERCENTILE = 0.99;
+const CLAMP = 1.2;
 
 export type Point3D = [number, number, number];
+
+/**
+ * Everything needed to place a *new* vector into the same space later, which is what lets a live
+ * question appear among the chunks it retrieves.
+ */
+export interface ProjectionBasis {
+  mean: number[];
+  components: number[][];
+  scales: [number, number, number];
+}
 
 function dot(a: number[], b: number[]): number {
   let total = 0;
@@ -43,21 +54,18 @@ function meanVector(vectors: number[][]): number[] {
   return mean.map((total) => total / vectors.length);
 }
 
-/** Divides each axis by its 99th-percentile magnitude and clamps, giving roughly -1..1 per axis. */
-function scaleToUnitCube(points: Point3D[]): Point3D[] {
-  const scales = ([0, 1, 2] as const).map((axis) => {
-    const magnitudes = points.map((point) => Math.abs(point[axis])).sort((a, b) => a - b);
-    return magnitudes[Math.floor(magnitudes.length * OUTLIER_PERCENTILE)] || 1;
-  });
-  const clamp = (value: number) => Math.max(-1.2, Math.min(1.2, value));
-  return points.map(
-    (point) => point.map((value, axis) => Number(clamp(value / scales[axis]!).toFixed(3))) as Point3D,
-  );
+const round = (value: number) => Number(value.toFixed(3));
+const clamp = (value: number) => Math.max(-CLAMP, Math.min(CLAMP, value));
+
+/** Places one vector using an existing basis, matching the stored points' coordinates. */
+export function projectWithBasis(vector: number[], basis: ProjectionBasis): Point3D {
+  const centered = vector.map((value, index) => value - (basis.mean[index] ?? 0));
+  return basis.components.map((component, axis) =>
+    round(clamp(dot(centered, component) / (basis.scales[axis] || 1))),
+  ) as Point3D;
 }
 
-export function projectTo3D(vectors: number[][]): Point3D[] {
-  if (vectors.length === 0) return [];
-
+export function projectTo3D(vectors: number[][]): { points: Point3D[]; basis: ProjectionBasis } {
   const mean = meanVector(vectors);
   const centered = vectors.map((vector) => vector.map((value, i) => value - mean[i]!));
 
@@ -76,8 +84,14 @@ export function projectTo3D(vectors: number[][]): Point3D[] {
     components.push(candidate);
   }
 
-  const points = centered.map(
-    (vector) => components.map((component) => dot(vector, component)) as Point3D,
+  const raw = centered.map((vector) => components.map((component) => dot(vector, component)) as Point3D);
+  const scales = ([0, 1, 2] as const).map((axis) => {
+    const magnitudes = raw.map((point) => Math.abs(point[axis])).sort((a, b) => a - b);
+    return magnitudes[Math.floor(magnitudes.length * OUTLIER_PERCENTILE)] || 1;
+  }) as [number, number, number];
+
+  const points = raw.map(
+    (point) => point.map((value, axis) => round(clamp(value / scales[axis]!))) as Point3D,
   );
-  return scaleToUnitCube(points);
+  return { points, basis: { mean, components, scales } };
 }

@@ -3,6 +3,7 @@ import Markdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CITATION_HREF_PREFIX, linkCitations } from "../lib/citations";
 import type { AnswerSource, AskResponse } from "../types";
+import { ShareAnswer } from "./ShareAnswer";
 import { SourcesPanel } from "./SourcesPanel";
 
 function CitationChip({ marker, source }: { marker: string; source: AnswerSource | undefined }) {
@@ -85,10 +86,13 @@ export function AnswerCard({ response }: { response: AskResponse }) {
           {markdown}
         </Markdown>
       </div>
-      <p className="mt-4 font-mono text-[0.7rem] text-mist/70">
-        {(response.latencyMs / 1000).toFixed(1)}s · {response.model}
-        {response.regenerated && " · regenerated to fix its citations"}
-      </p>
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <p className="font-mono text-[0.7rem] text-mist/70">
+          {(response.latencyMs / 1000).toFixed(1)}s · {response.model}
+          {response.regenerated && " · regenerated to fix its citations"}
+        </p>
+        {response.shareId && <ShareAnswer shareId={response.shareId} />}
+      </div>
       <SourcesPanel sources={response.sources} />
     </article>
   );

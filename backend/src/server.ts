@@ -30,7 +30,7 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 app.use(createReposRouter(catalog));
-app.use(createMapRouter(db));
+app.use(createMapRouter(db, embedder));
 app.use(createAskRouter(db, embedder, generator));
 app.use(createIngestRouter(db, github, catalog));
 

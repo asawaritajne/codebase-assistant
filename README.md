@@ -65,8 +65,13 @@ Design decisions worth calling out:
 - **Built for free tiers.** Rate limits, daily quotas, "high demand" 503s, request timeouts, and
   dropped database connections are all handled explicitly rather than crashing a run. Generation
   falls back across several Gemini models when one is overloaded.
+- **Conversations, not one-shots.** Follow-up questions carry the last few turns, and the previous
+  question rides along with the search so “and what about caching?” retrieves the right chunks.
+- **Every answer is linkable.** Answers are stored and served at `/a/<id>` with their sources, so one
+  can be shared with a teammate intact.
 - **The index is visible.** Every embedded chunk is projected from 768 dimensions to 3 with PCA and
-  rendered as an interactive point cloud, so "search by meaning" is something you can look at.
+  rendered as an interactive point cloud, so “search by meaning” is something you can look at — and a
+  live question can be placed in that same space, lit up against the chunks it retrieves.
 
 ## Tech stack
 
@@ -150,7 +155,9 @@ access token with `public_repo` scope.
 | `GET /health` | Liveness check |
 | `GET /repos` | Repository catalog with live indexing stats |
 | `GET /embedding-map` | Every chunk's 3D position, for the visualization |
-| `POST /ask` | `{ "repo": "express", "question": "..." }` → answer, sources, citation report |
+| `POST /ask` | `{ "repo", "question", "history" }` → answer, sources, citation report, share id |
+| `GET /answers/:id` | One stored answer with its sources, behind every share link |
+| `POST /embedding-map/query` | Places a question in the 3D map and names the chunks it retrieves |
 | `POST /ingest/:repoId` | Re-ingest one repository (protect before deploying) |
 
 ## Project layout

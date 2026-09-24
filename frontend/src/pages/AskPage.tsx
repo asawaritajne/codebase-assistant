@@ -12,7 +12,10 @@ import { formatNumber, indexedPercent } from "../lib/format";
 import { repoColor } from "../lib/repoColors";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 import { useRepos } from "../repos/ReposContext";
-import type { AskResponse, RepoSummary } from "../types";
+import type { AskResponse, ConversationTurn, RepoSummary } from "../types";
+
+/** Matches the backend's MAX_HISTORY_TURNS. */
+const MAX_HISTORY_TURNS = 3;
 
 type Turn =
   | { id: string; question: string; status: "loading"; startedAt: number }
@@ -184,9 +187,21 @@ export function AskPage() {
   const replaceTurn = (key: string, next: Turn) =>
     updateTurns(key, (list) => list.map((turn) => (turn.id === next.id ? next : turn)));
 
+  /** Earlier answered turns of this repo's conversation, so follow-ups make sense. */
+  const historyFor = (key: string, upToId: string): ConversationTurn[] => {
+    const list = conversations[key] ?? [];
+    const position = list.findIndex((turn) => turn.id === upToId);
+    return list
+      .slice(0, position === -1 ? list.length : position)
+      .filter((turn): turn is Extract<Turn, { status: "done" }> => turn.status === "done")
+      .slice(-MAX_HISTORY_TURNS)
+      .map((turn) => ({ question: turn.question, answer: turn.response.answer }));
+  };
+
   const run = async (key: string, id: string, question: string) => {
     try {
-      replaceTurn(key, { id, question, status: "done", response: await askQuestion(key, question) });
+      const response = await askQuestion(key, question, historyFor(key, id));
+      replaceTurn(key, { id, question, status: "done", response });
     } catch (err) {
       replaceTurn(key, { id, question, status: "error", error: describeError(err) });
     }

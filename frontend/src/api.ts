@@ -1,4 +1,11 @@
-import type { AskResponse, EmbeddingMap, RepoSummary } from "./types";
+import type {
+  AskResponse,
+  ConversationTurn,
+  EmbeddingMap,
+  MapQueryResult,
+  RepoSummary,
+  SharedAnswer,
+} from "./types";
 
 export const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/+$/, "");
 
@@ -58,10 +65,31 @@ async function request<T>(path: string, init: RequestInit, timeoutMs: number): P
   }
 }
 
-export function askQuestion(repo: string, question: string): Promise<AskResponse> {
+export function askQuestion(repo: string, question: string, history: ConversationTurn[] = []): Promise<AskResponse> {
   return request<AskResponse>(
     "/ask",
-    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ repo, question }) },
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ repo, question, history }),
+    },
+    ASK_TIMEOUT_MS,
+  );
+}
+
+export function fetchSharedAnswer(id: string): Promise<SharedAnswer> {
+  return request<SharedAnswer>(`/answers/${id}`, {}, REPOS_TIMEOUT_MS);
+}
+
+/** Retrieval only: where a question lands in the 3D map and which chunks it pulls. */
+export function queryEmbeddingMap(question: string, repo?: string): Promise<MapQueryResult> {
+  return request<MapQueryResult>(
+    "/embedding-map/query",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(repo ? { question, repo } : { question }),
+    },
     ASK_TIMEOUT_MS,
   );
 }

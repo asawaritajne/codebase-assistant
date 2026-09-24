@@ -40,6 +40,8 @@ export interface EmbeddingMap {
   isTest: number[];
   titles: string[];
   urls: string[];
+  /** Per-point identifiers, used to locate a live query's neighbours. */
+  keys: string[];
   builtAt: string | null;
 }
 
@@ -74,4 +76,36 @@ export interface AskResponse {
   embeddingModel: string;
   retrievalMs: number;
   latencyMs: number;
+  /** Id behind this answer's permanent link, or null if it couldn't be recorded. */
+  shareId: string | null;
+}
+
+/** A stored answer, as shown on /a/<id>. */
+export interface SharedAnswer extends Omit<AskResponse, "shareId"> {
+  id: string;
+  repo: string;
+  repoId: string;
+  createdAt: string;
+}
+
+/** One turn of a conversation, sent with follow-up questions. */
+export interface ConversationTurn {
+  question: string;
+  answer: string;
+}
+
+export interface MapQueryNeighbour {
+  key: string;
+  title: string;
+  type: SourceType;
+  repo: string;
+  sourceUrl: string;
+  score: number;
+}
+
+/** Where a live question lands in the 3D space, and what it would retrieve. */
+export interface MapQueryResult {
+  question: string;
+  position: [number, number, number];
+  neighbours: MapQueryNeighbour[];
 }

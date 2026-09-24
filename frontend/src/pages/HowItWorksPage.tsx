@@ -133,17 +133,32 @@ export function HowItWorksPage() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl space-y-8 px-4 py-20 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
         <Reveal>
           <h2 className="font-display text-2xl font-semibold tracking-tight text-chalk">Indexing, ahead of time</h2>
-          <p className="mt-2 text-sm text-mist">Runs once per repository, in budgeted batches.</p>
-          <div className="mt-6">
-            <Pipeline3D stages={INDEXING_STAGES} />
-          </div>
+          <p className="mt-2 text-sm text-mist">Runs once per repository, in batches budgeted against the daily quota.</p>
+          <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {INDEXING_STAGES.map((stage, index) => (
+              <li key={stage.title} className="glass glass-hover relative rounded-2xl p-5">
+                <span className="font-mono text-xs text-glow">{String(index + 1).padStart(2, "0")}</span>
+                <h3 className="mt-1.5 font-display text-sm font-semibold text-chalk">{stage.title}</h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-mist">{stage.detail}</p>
+                {index < INDEXING_STAGES.length - 1 && (
+                  <span aria-hidden="true" className="absolute top-1/2 -right-2.5 hidden text-mist/50 lg:block">
+                    →
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
         </Reveal>
-        <Reveal>
-          <h2 className="mt-12 font-display text-2xl font-semibold tracking-tight text-chalk">Answering, per question</h2>
-          <p className="mt-2 text-sm text-mist">Runs in seconds, every time you ask.</p>
+
+        <Reveal className="mt-16">
+          <h2 className="font-display text-2xl font-semibold tracking-tight text-chalk">Answering, per question</h2>
+          <p className="mt-2 text-sm text-mist">
+            Runs in seconds, every time you ask. Each sphere below is a stage; the motes travelling between them are chunks
+            of your repository moving through the pipeline.
+          </p>
           <div className="mt-6">
             <Pipeline3D stages={ANSWERING_STAGES} />
           </div>

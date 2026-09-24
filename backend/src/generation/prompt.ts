@@ -15,19 +15,49 @@ export const ANSWER_SYSTEM_INSTRUCTION = [
   "- Be concise and concrete. Use short paragraphs or bullets, and quote small snippets from the sources where they help.",
 ].join("\n");
 
-export function buildAnswerPrompt(repo: string, question: string, chunks: RetrievedChunk[]): string {
+export interface ConversationTurn {
+  question: string;
+  answer: string;
+}
+
+/** Earlier answers are summarised down to this, enough for follow-ups without crowding the sources. */
+const HISTORY_ANSWER_CHARS = 600;
+
+export function buildAnswerPrompt(
+  repo: string,
+  question: string,
+  chunks: RetrievedChunk[],
+  history: ConversationTurn[] = [],
+): string {
   const sources = chunks.map((chunk, index) => {
     const lines = chunk.startLine ? ` (lines ${chunk.startLine}-${chunk.endLine})` : "";
     return `[S${index + 1}] ${chunk.type} | ${chunk.title}${lines} | ${chunk.sourceUrl}\n${chunk.text}`;
   });
 
+  const earlier = history.map(
+    (turn, index) =>
+      `Q${index + 1}: ${turn.question}\nA${index + 1}: ${turn.answer.slice(0, HISTORY_ANSWER_CHARS)}${
+        turn.answer.length > HISTORY_ANSWER_CHARS ? "…" : ""
+      }`,
+  );
+
   return [
     `Repository: ${repo}`,
     "",
+    ...(earlier.length > 0
+      ? [
+          "Earlier in this conversation (context only — never cite it as a source):",
+          "",
+          earlier.join("\n\n"),
+          "",
+        ]
+      : []),
     "Sources:",
     "",
     sources.join("\n\n---\n\n"),
     "",
-    `Question: ${question}`,
+    history.length > 0
+      ? `Follow-up question (it may refer back to the conversation above): ${question}`
+      : `Question: ${question}`,
   ].join("\n");
 }

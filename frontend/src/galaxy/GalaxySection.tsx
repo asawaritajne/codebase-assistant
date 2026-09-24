@@ -1,8 +1,10 @@
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { formatNumber } from "../lib/format";
 import { repoColor } from "../lib/repoColors";
-import type { EmbeddingMap } from "../types";
+import type { EmbeddingMap, MapQueryResult } from "../types";
 import type { HoveredPoint } from "./CloudPoints";
+import type { GalaxyQuery } from "./EmbeddingGalaxy";
+import { QuerySearch } from "./QuerySearch";
 import { useEmbeddingMap } from "./useEmbeddingMap";
 
 // three.js is a large dependency, so it only downloads once the galaxy scrolls into view.
@@ -108,7 +110,20 @@ export function GalaxySection({ heading, intro }: { heading: string; intro: stri
   const [highlight, setHighlight] = useState<string | null>(null);
   const [hovered, setHovered] = useState<HoveredPoint | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  const [queryResult, setQueryResult] = useState<MapQueryResult | null>(null);
   const reducedMotion = usePrefersReducedMotion();
+
+  // Neighbours come back as chunk keys; look up where those chunks sit in the map.
+  const query = useMemo<GalaxyQuery | null>(() => {
+    if (!map || !queryResult) return null;
+    const indexByKey = new Map(map.keys.map((key, index) => [key, index]));
+    const neighbourPositions = queryResult.neighbours.flatMap((neighbour) => {
+      const index = indexByKey.get(neighbour.key);
+      if (index === undefined) return [];
+      return [map.positions.slice(index * 3, index * 3 + 3) as [number, number, number]];
+    });
+    return { position: queryResult.position, neighbourPositions };
+  }, [map, queryResult]);
 
   return (
     <div ref={ref}>
@@ -119,7 +134,8 @@ export function GalaxySection({ heading, intro }: { heading: string; intro: stri
       </div>
 
       <div className="relative mt-8 overflow-hidden rounded-3xl border border-white/8 bg-void shadow-[0_40px_120px_-60px_var(--color-iris)]">
-        <div className="relative h-[460px] md:h-[620px]">
+        {map && <QuerySearch result={queryResult} onResult={setQueryResult} />}
+        <div className="relative h-115 md:h-155">
           {error ? (
             <p className="grid h-full place-items-center px-6 text-center text-sm text-mist">{error}</p>
           ) : map ? (
@@ -127,7 +143,8 @@ export function GalaxySection({ heading, intro }: { heading: string; intro: stri
               <EmbeddingGalaxy
                 map={map}
                 highlight={highlight}
-                autoRotate={!reducedMotion && hovered === null && selected === null}
+                autoRotate={!reducedMotion && hovered === null && selected === null && queryResult === null}
+                query={query}
                 onHover={setHovered}
                 onSelect={setSelected}
               />

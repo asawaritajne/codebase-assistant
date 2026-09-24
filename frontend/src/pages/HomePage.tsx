@@ -5,7 +5,6 @@ import { RepoCard, RepoCardSkeleton } from "../components/repos/RepoCard";
 import { Reveal } from "../components/Reveal";
 import { GalaxySection } from "../galaxy/GalaxySection";
 import { HeroBackdrop } from "../galaxy/HeroBackdrop";
-import { Pipeline3D } from "../galaxy/Pipeline3D";
 import { catalogTotals, formatNumber } from "../lib/format";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 import { useTilt } from "../lib/useTilt";
@@ -31,22 +30,6 @@ const FEATURES = [
     icon: "M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z",
     accent: "from-ember/25",
   },
-];
-
-const PIPELINE = [
-  { title: "Ingest", detail: "Source files, tests, commits, and merged PRs are pulled from GitHub." },
-  { title: "Chunk & embed", detail: "Code is split at block boundaries and turned into vectors with Gemini." },
-  { title: "Retrieve", detail: "Your question is matched by meaning against that repository's chunks." },
-  { title: "Answer & verify", detail: "Gemini answers from the matches alone, and every citation is checked." },
-];
-
-const STACK = [
-  { name: "React + TypeScript", role: "Interface" },
-  { name: "three.js", role: "3D visualization" },
-  { name: "Node.js + Express", role: "API" },
-  { name: "MongoDB Atlas", role: "Vector search" },
-  { name: "Google Gemini", role: "Embeddings + answers" },
-  { name: "GitHub REST API", role: "Source data" },
 ];
 
 function FeatureCard({ feature }: { feature: (typeof FEATURES)[number] }) {
@@ -168,24 +151,6 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* Pipeline */}
-      <section className="mx-auto w-full max-w-7xl px-4 pb-24 sm:px-6">
-        <Reveal className="flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-2xl">
-            <p className="font-mono text-xs tracking-[0.2em] text-glow uppercase">How it works</p>
-            <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-chalk sm:text-4xl">
-              From GitHub to a cited answer
-            </h2>
-          </div>
-          <Link to="/how-it-works" className="font-semibold text-glow transition-colors hover:text-chalk">
-            Read the full breakdown <span aria-hidden="true">→</span>
-          </Link>
-        </Reveal>
-        <Reveal className="mt-10">
-          <Pipeline3D stages={PIPELINE} />
-        </Reveal>
-      </section>
-
       {/* Repositories */}
       <section className="relative border-y border-white/5 bg-deep/50">
         <div aria-hidden="true" className="bg-grid absolute inset-0 opacity-40" />
@@ -220,21 +185,9 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* Stack + call to action */}
+      {/* Call to action */}
       <section className="mx-auto w-full max-w-7xl px-4 py-24 sm:px-6">
         <Reveal>
-          <p className="font-mono text-xs tracking-[0.2em] text-glow uppercase">Built with</p>
-          <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {STACK.map((item) => (
-              <li key={item.name} className="glass glass-hover rounded-xl px-4 py-3">
-                <p className="text-sm font-medium text-chalk">{item.name}</p>
-                <p className="mt-0.5 font-mono text-[0.7rem] text-mist/80">{item.role}</p>
-              </li>
-            ))}
-          </ul>
-        </Reveal>
-
-        <Reveal className="mt-16">
           <div className="glass relative overflow-hidden rounded-3xl px-6 py-16 text-center sm:px-12">
             <span aria-hidden="true" className="absolute inset-x-0 -top-32 h-64 bg-linear-to-b from-iris/30 to-transparent blur-3xl" />
             <h2 className="relative font-display text-3xl font-semibold tracking-tight text-balance text-chalk sm:text-4xl">
