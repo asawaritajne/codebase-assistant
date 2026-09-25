@@ -218,10 +218,15 @@ put it:
 
 ```
 #1     axios-settle        lib/core/settle.js
-MISS   zustand-persist     src/middleware/persist.ts
+#3     zustand-persist     tests/persistAsync.test.tsx
 
-33 cases · hit@1 54.5% · hit@3 84.8% · hit@5 87.9% · MRR 0.694 · 4 missed
+33 cases · hit@1 54.5% · hit@3 90.9% · hit@5 97% · MRR 0.726 · 1 missed
+       plain search:    hit@1 54.5% · hit@3 84.8% · hit@5 87.9% · MRR 0.694 · 4 missed
 ```
+
+Reserving slots for non-test code took misses from 4 to 1 and hit@5 from 87.9% to 97%. It leaves
+hit@1 alone by design — the reserved slots sit below the top results, and what matters for an answer
+is whether the implementation reaches the model at all.
 
 Questions are embedded once and cached, so later runs cost no quota. The daily job re-runs it, which
 keeps the scoreboard honest as more of the catalogue finishes indexing.

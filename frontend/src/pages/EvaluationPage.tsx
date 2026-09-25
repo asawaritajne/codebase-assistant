@@ -136,6 +136,11 @@ function PolicyComparison({ run }: { run: EvalRun }) {
           </div>
         ))}
       </dl>
+      <p className="mt-8 max-w-2xl text-sm leading-relaxed text-mist/80">
+        “Found first” is unchanged, and that is what the change was meant to do: the reserved slots sit below the top
+        results, so a test that genuinely looks like the question still ranks first. What matters for an answer is
+        whether the implementation is in front of the model at all — and now it nearly always is.
+      </p>
     </Reveal>
   );
 }
