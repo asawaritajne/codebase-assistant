@@ -12,9 +12,13 @@ LOG_FILE="$HOME/Library/Logs/codebase-assistant-embed.log"
 # Wall-clock caps. Node enforces its own per-request deadline, but launchd will not start tomorrow's
 # run while today's is still alive, so one wedged process would silently stop indexing for good —
 # which is exactly what happened on 2026-09-25. A run that overshoots is killed instead.
-EMBED_LIMIT_SECONDS=5400
-MAP_LIMIT_SECONDS=900
-EVAL_LIMIT_SECONDS=900
+#
+# These are deliberately loose. A healthy run waits out per-minute rate limits for hours: 2026-09-27
+# took just over three. The cap exists to stop a hang outliving the next scheduled start, not to
+# hurry a run that is making progress, so anything comfortably under a day does the job.
+EMBED_LIMIT_SECONDS=21600
+MAP_LIMIT_SECONDS=1800
+EVAL_LIMIT_SECONDS=1800
 
 # launchd starts with a bare environment, so node has to be put on the PATH explicitly.
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
@@ -32,10 +36,12 @@ run_capped() {
   "$@" &
   local pid=$!
 
-  local waited=0
-  while [ "$waited" -lt "$limit" ] && kill -0 "$pid" 2>/dev/null; do
+  # Elapsed time is read from the clock, not counted in loop iterations: `sleep 5` is at least five
+  # seconds, and across a machine suspending it can be very much more. Counting iterations made the
+  # cap silently unreachable on 2026-09-27, when a three-hour run was never measured as one.
+  local started=$SECONDS
+  while [ $((SECONDS - started)) -lt "$limit" ] && kill -0 "$pid" 2>/dev/null; do
     sleep 5
-    waited=$((waited + 5))
   done
 
   if kill -0 "$pid" 2>/dev/null; then

@@ -1,5 +1,6 @@
 import type { Db } from "mongodb";
 import { REPOS } from "../config/repos.js";
+import { withMongoRetry } from "../db/mongo.js";
 import { EMBEDDED_CHUNKS_COLLECTION } from "../embedding/store.js";
 import type { SourceType } from "../ingestion/types.js";
 import { projectTo3D, type Point3D, type ProjectionBasis } from "./projection.js";
@@ -44,10 +45,15 @@ const TYPES: SourceType[] = ["code", "commit", "pr"];
 
 /** Recomputes the projection from every embedded chunk and replaces the stored map. */
 export async function buildEmbeddingMap(db: Db): Promise<number> {
-  const chunks = await db
-    .collection(EMBEDDED_CHUNKS_COLLECTION)
-    .find({}, { projection: { embedding: 1, repo: 1, type: 1, isTest: 1, title: 1, sourceUrl: 1, sourceId: 1, chunkIndex: 1 } })
-    .toArray();
+  // Every embedding at once is tens of megabytes, and a read that long can outlive the driver's
+  // server monitor — which is how a nightly run lost its map while the embedding it depended on
+  // had succeeded. Retrying costs nothing here: the read changes nothing.
+  const chunks = await withMongoRetry("Reading embeddings for the map", () =>
+    db
+      .collection(EMBEDDED_CHUNKS_COLLECTION)
+      .find({}, { projection: { embedding: 1, repo: 1, type: 1, isTest: 1, title: 1, sourceUrl: 1, sourceId: 1, chunkIndex: 1 } })
+      .toArray(),
+  );
   if (chunks.length === 0) return 0;
 
   const { points: positions, basis } = projectTo3D(chunks.map((chunk) => chunk.embedding as number[]));
@@ -63,13 +69,17 @@ export async function buildEmbeddingMap(db: Db): Promise<number> {
 
   const builtAt = new Date();
   const collection = db.collection<MapPoint & { builtAt: Date }>(EMBEDDING_MAP_COLLECTION);
-  await collection.deleteMany({});
-  await collection.insertMany(points.map((point) => ({ ...point, builtAt })));
+  await withMongoRetry("Replacing the stored map", async () => {
+    await collection.deleteMany({});
+    await collection.insertMany(points.map((point) => ({ ...point, builtAt })));
+  });
 
   // The basis lets a live question be placed in the same space without redoing the projection.
-  await db
-    .collection(BASIS_COLLECTION)
-    .replaceOne({ _id: "current" as never }, { ...basis, builtAt, points: points.length }, { upsert: true });
+  await withMongoRetry("Storing the projection basis", () =>
+    db
+      .collection(BASIS_COLLECTION)
+      .replaceOne({ _id: "current" as never }, { ...basis, builtAt, points: points.length }, { upsert: true }),
+  );
 
   return points.length;
 }
