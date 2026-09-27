@@ -31,6 +31,49 @@ export function createGeminiClient(apiKey: string): GoogleGenAI {
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Carries the name planRetry looks for, so a deadline is treated like any other timeout. */
+class GeminiTimeoutError extends Error {
+  override readonly name = "AbortError";
+}
+
+/**
+ * Runs one Gemini call under a deadline this code owns.
+ *
+ * `HttpOptions.timeout` is not enough on its own. The SDK arms a single `setTimeout` per attempt and
+ * calls `unref()` on it, and it *raises* Undici's own header and body timeouts to match rather than
+ * lowering them. When a laptop suspends mid-request the socket dies with nobody watching it, and the
+ * promise never settles: an overnight indexing run sat on one dead request for 31 hours, which also
+ * stopped launchd from starting the next day's run.
+ *
+ * So the call is raced against a timer here as well. The signal asks the SDK to stop; the race
+ * guarantees this code stops regardless of whether it does.
+ */
+export async function withDeadline<T>(
+  label: string,
+  call: (signal: AbortSignal) => Promise<T>,
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
+): Promise<T> {
+  const controller = new AbortController();
+  const abortTimer = setTimeout(() => controller.abort(), timeoutMs);
+  let raceTimer: NodeJS.Timeout | undefined;
+
+  try {
+    return await Promise.race([
+      call(controller.signal),
+      // A grace period after the abort, so a cooperating SDK reports the real error first.
+      new Promise<never>((_, reject) => {
+        raceTimer = setTimeout(
+          () => reject(new GeminiTimeoutError(`Gemini ${label} request went unanswered for ${timeoutMs / 1000}s`)),
+          timeoutMs + 2_000,
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(abortTimer);
+    clearTimeout(raceTimer);
+  }
+}
+
 interface GoogleErrorBody {
   error?: {
     message?: string;

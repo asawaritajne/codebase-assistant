@@ -1,5 +1,5 @@
 import type { GoogleGenAI } from "@google/genai";
-import { createGeminiClient, planRetry, sleep } from "../gemini/client.js";
+import { createGeminiClient, planRetry, sleep, withDeadline } from "../gemini/client.js";
 
 export const EMBEDDING_MODEL = "gemini-embedding-2";
 /**
@@ -60,13 +60,15 @@ export class GeminiEmbedder {
   }
 
   private async request(texts: string[]): Promise<number[][]> {
-    const response = await this.ai.models.embedContent({
-      model: EMBEDDING_MODEL,
-      // One Content per text: gemini-embedding-2 treats a plain string[] as parts of a single
-      // input and returns just one embedding for all of them.
-      contents: texts.map((text) => ({ parts: [{ text }] })),
-      config: { outputDimensionality: EMBEDDING_DIMENSIONS },
-    });
+    const response = await withDeadline("embedding", (abortSignal) =>
+      this.ai.models.embedContent({
+        model: EMBEDDING_MODEL,
+        // One Content per text: gemini-embedding-2 treats a plain string[] as parts of a single
+        // input and returns just one embedding for all of them.
+        contents: texts.map((text) => ({ parts: [{ text }] })),
+        config: { outputDimensionality: EMBEDDING_DIMENSIONS, abortSignal },
+      }),
+    );
     const vectors = (response.embeddings ?? []).map((embedding) => embedding.values ?? []);
     if (vectors.length !== texts.length || vectors.some((vector) => vector.length !== EMBEDDING_DIMENSIONS)) {
       throw new Error(`Gemini returned ${vectors.length} embeddings for ${texts.length} inputs`);

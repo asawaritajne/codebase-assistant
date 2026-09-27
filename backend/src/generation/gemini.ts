@@ -1,5 +1,5 @@
 import type { GoogleGenAI } from "@google/genai";
-import { GeminiUnavailableError, createGeminiClient, dailyQuotaError, sleep } from "../gemini/client.js";
+import { GeminiUnavailableError, createGeminiClient, dailyQuotaError, sleep, withDeadline } from "../gemini/client.js";
 
 /**
  * Tried in order. The free tier's main Flash model is regularly overloaded ("high demand"), and a
@@ -66,12 +66,14 @@ export class GeminiGenerator {
   }
 
   private async request(model: string, systemInstruction: string, prompt: string): Promise<string> {
-    const response = await this.ai.models.generateContent({
-      model,
-      contents: prompt,
-      // Low temperature: answers should stick to the sources rather than paraphrase freely.
-      config: { systemInstruction, temperature: 0.2, maxOutputTokens: MAX_OUTPUT_TOKENS },
-    });
+    const response = await withDeadline("generation", (abortSignal) =>
+      this.ai.models.generateContent({
+        model,
+        contents: prompt,
+        // Low temperature: answers should stick to the sources rather than paraphrase freely.
+        config: { systemInstruction, temperature: 0.2, maxOutputTokens: MAX_OUTPUT_TOKENS, abortSignal },
+      }),
+    );
     const text = response.text?.trim();
     if (!text) {
       throw new Error(`no answer text (finish reason: ${response.candidates?.[0]?.finishReason ?? "unknown"})`);
