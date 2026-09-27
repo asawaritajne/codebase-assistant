@@ -267,8 +267,13 @@ export const EVAL_CASES: EvalCase[] = [
     id: "xstate-transition",
     repoId: "xstate",
     question: "How does a state decide which transition to take for an event?",
-    expect: ["packages/core/src/StateNode.ts", "packages/core/src/StateMachine.ts"],
-    because: "Transition selection lives on the state node and its machine.",
+    // Corrected 2026-09-26. This first expected StateNode.ts, written when xstate was 11% indexed
+    // and only its filenames were visible. Once the rest arrived, retrieval returned stateUtils.ts
+    // and scored a miss — but stateUtils.ts holds selectTransitions, selectEventlessTransitions and
+    // microstep, so it was right and the key was wrong. StateNode.ts defines the class and its
+    // configuration, not the selection, so it is no longer accepted.
+    expect: ["packages/core/src/stateUtils.ts", "packages/core/src/transition.ts"],
+    because: "selectTransitions and microstep, in stateUtils.ts, are what choose the transition.",
   },
 ];
 
