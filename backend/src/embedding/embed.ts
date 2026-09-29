@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { Db, WithId } from "mongodb";
+import type { Db, ObjectId, WithId } from "mongodb";
 import { withMongoRetry } from "../db/mongo.js";
 import { GeminiQuotaExhaustedError } from "../gemini/client.js";
 import { RAW_INGESTION_COLLECTION } from "../ingestion/store.js";
@@ -13,6 +13,9 @@ import {
 } from "./gemini.js";
 import { EMBEDDED_CHUNKS_COLLECTION, VECTOR_INDEX_NAME, getEmbeddedChunksCollection, hasVectorIndex, replaceChunks } from "./store.js";
 import type { EmbeddedChunk, RawDocumentWithEmbeddingStatus } from "./types.js";
+
+/** Documents read per planning page; bounded so one slow read cannot fail the whole run. */
+const PLAN_PAGE_SIZE = 500;
 
 /** Chunks embedded and saved together; a run that stops early keeps every finished group. */
 const CHUNKS_PER_GROUP = 100;
@@ -97,21 +100,35 @@ export async function runEmbedding(
   const rawCollection = db.collection<RawDocumentWithEmbeddingStatus>(RAW_INGESTION_COLLECTION);
   const priority = new Map(repos.map((repo, index) => [repo, index]));
 
-  const allDocs = await rawCollection.find({ repo: { $in: repos } }).toArray();
+  // Paged and retried: reading every ingested document at once is megabytes of file contents, and
+  // on 2026-09-28 that single read outlived the driver's server monitor and failed the whole run
+  // before a single chunk was embedded. Each page is bounded work that can be retried on its own.
   const documentsPerRepo = new Map<string, number>();
   const pending: PendingDocument[] = [];
-  for (const doc of allDocs) {
-    documentsPerRepo.set(doc.repo, (documentsPerRepo.get(doc.repo) ?? 0) + 1);
-    const currentFingerprint = fingerprint(doc);
-    if (needsEmbedding(doc, currentFingerprint)) {
-      pending.push({ doc, fingerprint: currentFingerprint, chunks: chunkRawDocument(doc) });
+  let scanned = 0;
+  let after: ObjectId | undefined;
+  for (;;) {
+    const filter = { repo: { $in: repos }, ...(after ? { _id: { $gt: after } } : {}) };
+    const page = await withMongoRetry(`Planning${scanned > 0 ? ` (resuming after ${scanned})` : ""}`, () =>
+      rawCollection.find(filter).sort({ _id: 1 }).limit(PLAN_PAGE_SIZE).toArray(),
+    );
+    if (page.length === 0) break;
+
+    for (const doc of page) {
+      documentsPerRepo.set(doc.repo, (documentsPerRepo.get(doc.repo) ?? 0) + 1);
+      const currentFingerprint = fingerprint(doc);
+      if (needsEmbedding(doc, currentFingerprint)) {
+        pending.push({ doc, fingerprint: currentFingerprint, chunks: chunkRawDocument(doc) });
+      }
     }
+    scanned += page.length;
+    after = page.at(-1)!._id;
   }
   // Earlier repos first (sort is stable, so each repo keeps its stored order).
   pending.sort((a, b) => priority.get(a.doc.repo)! - priority.get(b.doc.repo)!);
 
   const plannedChunks = chunkCount(pending);
-  log(`${pending.length} of ${allDocs.length} documents need embedding (${plannedChunks} chunks)`);
+  log(`${pending.length} of ${scanned} documents need embedding (${plannedChunks} chunks)`);
   logPlan(repos, pending, documentsPerRepo);
 
   // Whole documents only: take them in order until the next one would go over the budget.

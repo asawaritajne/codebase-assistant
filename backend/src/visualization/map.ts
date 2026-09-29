@@ -1,4 +1,4 @@
-import type { Db } from "mongodb";
+import type { Db, Document, ObjectId } from "mongodb";
 import { REPOS } from "../config/repos.js";
 import { withMongoRetry } from "../db/mongo.js";
 import { EMBEDDED_CHUNKS_COLLECTION } from "../embedding/store.js";
@@ -42,18 +42,41 @@ export interface EmbeddingMap {
 }
 
 const TYPES: SourceType[] = ["code", "commit", "pr"];
+/** Roughly 11 MB of embeddings per page — small enough to finish well inside any monitor timeout. */
+const MAP_PAGE_SIZE = 1000;
+
+/**
+ * Chunks a page at a time, walking `_id` rather than holding one cursor open.
+ *
+ * Every embedding at once is over 100 MB, and a read that large outlives the driver's server
+ * monitor on the free cluster: it failed two nights running, and because each retry repeated the
+ * same doomed read the third attempt was still going half an hour later. A page is a bounded
+ * amount of work, and a retry re-reads only that page instead of starting again.
+ */
+async function* readChunkPages(db: Db): AsyncGenerator<Document[]> {
+  let after: ObjectId | undefined;
+  while (true) {
+    const filter = after ? { _id: { $gt: after } } : {};
+    const page: Document[] = await withMongoRetry(`Reading embeddings for the map${after ? " (resuming)" : ""}`, () =>
+      db
+        .collection(EMBEDDED_CHUNKS_COLLECTION)
+        .find(filter, {
+          projection: { embedding: 1, repo: 1, type: 1, isTest: 1, title: 1, sourceUrl: 1, sourceId: 1, chunkIndex: 1 },
+        })
+        .sort({ _id: 1 })
+        .limit(MAP_PAGE_SIZE)
+        .toArray(),
+    );
+    if (page.length === 0) return;
+    yield page;
+    after = page.at(-1)!._id as ObjectId;
+  }
+}
 
 /** Recomputes the projection from every embedded chunk and replaces the stored map. */
 export async function buildEmbeddingMap(db: Db): Promise<number> {
-  // Every embedding at once is tens of megabytes, and a read that long can outlive the driver's
-  // server monitor — which is how a nightly run lost its map while the embedding it depended on
-  // had succeeded. Retrying costs nothing here: the read changes nothing.
-  const chunks = await withMongoRetry("Reading embeddings for the map", () =>
-    db
-      .collection(EMBEDDED_CHUNKS_COLLECTION)
-      .find({}, { projection: { embedding: 1, repo: 1, type: 1, isTest: 1, title: 1, sourceUrl: 1, sourceId: 1, chunkIndex: 1 } })
-      .toArray(),
-  );
+  const chunks: Document[] = [];
+  for await (const page of readChunkPages(db)) chunks.push(...page);
   if (chunks.length === 0) return 0;
 
   const { points: positions, basis } = projectTo3D(chunks.map((chunk) => chunk.embedding as number[]));
