@@ -1,5 +1,5 @@
 import type { GoogleGenAI } from "@google/genai";
-import { createGeminiClient, planRetry, sleep, withDeadline } from "../gemini/client.js";
+import { BATCH_TIMEOUT_RETRIES, createGeminiClient, planRetry, sleep, withDeadline } from "../gemini/client.js";
 
 export const EMBEDDING_MODEL = "gemini-embedding-2";
 /**
@@ -41,7 +41,8 @@ export class GeminiEmbedder {
         vectors.push(...(await this.request(batch)));
         retries = 0;
       } catch (error) {
-        const plan = planRetry(error, retries, "embedding");
+        // A background run should ride out a network blip rather than abandon the day's quota.
+        const plan = planRetry(error, retries, "embedding", { maxTimeoutRetries: BATCH_TIMEOUT_RETRIES });
         if (plan.isTokenQuota && this.batchSize > 1) {
           this.batchSize = Math.ceil(this.batchSize / 2);
           console.warn(`[gemini] embedding: retrying with batches of ${this.batchSize}`);

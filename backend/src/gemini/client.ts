@@ -7,8 +7,17 @@ const MAX_RETRY_WAIT_SECONDS = 120;
  * browser gave up (the frontend waits 120s). Normal calls finish well inside this.
  */
 const REQUEST_TIMEOUT_MS = 45_000;
-/** A second timeout in a row means Gemini is struggling; fail rather than keep the caller waiting. */
+/**
+ * A second timeout in a row means Gemini is struggling; fail rather than keep a reader waiting.
+ * Batch work overrides this — see BATCH_TIMEOUT_RETRIES.
+ */
 const MAX_TIMEOUT_RETRIES = 1;
+/**
+ * How many consecutive timeouts a background run tolerates. Nobody is waiting on it, and giving up
+ * throws away the rest of a day's quota: on 2026-09-30 a brief network drop stopped an indexing run
+ * at 399 of 748 chunks. Successes reset the count, so this only ends a run that is truly stuck.
+ */
+export const BATCH_TIMEOUT_RETRIES = 5;
 
 export class GeminiQuotaExhaustedError extends Error {
   constructor(message: string) {
@@ -119,13 +128,18 @@ export interface RetryPlan {
  * GeminiQuotaExhaustedError when the quota is spent (the caller should stop and resume later), or
  * rethrows anything that isn't worth retrying.
  */
-export function planRetry(error: unknown, retries: number, label: string): RetryPlan {
+export function planRetry(
+  error: unknown,
+  retries: number,
+  label: string,
+  { maxTimeoutRetries = MAX_TIMEOUT_RETRIES }: { maxTimeoutRetries?: number } = {},
+): RetryPlan {
   const backoffSeconds = Math.min(2 ** retries, 60);
 
   if (!(error instanceof ApiError)) {
     // The SDK enforces REQUEST_TIMEOUT_MS by aborting the fetch; nothing else aborts these calls.
     if (error instanceof Error && error.name === "AbortError") {
-      if (retries >= MAX_TIMEOUT_RETRIES) {
+      if (retries >= maxTimeoutRetries) {
         throw new Error(`Gemini ${label} request timed out after ${REQUEST_TIMEOUT_MS / 1000}s`, { cause: error });
       }
       console.warn(`[gemini] ${label}: request timed out after ${REQUEST_TIMEOUT_MS / 1000}s; retrying in ${backoffSeconds}s`);

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { planRetry, withDeadline } from "./client.js";
+import { BATCH_TIMEOUT_RETRIES, planRetry, withDeadline } from "./client.js";
 
 describe("withDeadline", () => {
   it("returns the value when the call answers in time", async () => {
@@ -50,14 +50,34 @@ describe("withDeadline", () => {
 });
 
 describe("planRetry with a deadline error", () => {
-  it("retries a timeout once, then gives up rather than hanging on", async () => {
-    const timeout = Object.assign(new Error("Gemini embedding request went unanswered for 45s"), {
-      name: "AbortError",
-    });
+  const timeout = Object.assign(new Error("Gemini embedding request went unanswered for 45s"), {
+    name: "AbortError",
+  });
 
-    const plan = planRetry(timeout, 0, "embedding");
+  it("retries a timeout once, then gives up rather than keeping a reader waiting", () => {
+    const plan = planRetry(timeout, 0, "generation");
     assert.ok(plan.waitSeconds > 0);
 
-    assert.throws(() => planRetry(timeout, 1, "embedding"), /timed out/);
+    assert.throws(() => planRetry(timeout, 1, "generation"), /timed out/);
+  });
+
+  it("lets a background run ride out several timeouts", () => {
+    // A blip mid-run used to abandon the rest of the day's embedding quota.
+    for (let retries = 0; retries < BATCH_TIMEOUT_RETRIES; retries++) {
+      assert.ok(planRetry(timeout, retries, "embedding", { maxTimeoutRetries: BATCH_TIMEOUT_RETRIES }).waitSeconds > 0);
+    }
+  });
+
+  it("still gives up on a run that is genuinely stuck", () => {
+    assert.throws(
+      () => planRetry(timeout, BATCH_TIMEOUT_RETRIES, "embedding", { maxTimeoutRetries: BATCH_TIMEOUT_RETRIES }),
+      /timed out/,
+    );
+  });
+
+  it("backs off further with each consecutive timeout", () => {
+    const first = planRetry(timeout, 0, "embedding", { maxTimeoutRetries: BATCH_TIMEOUT_RETRIES }).waitSeconds;
+    const later = planRetry(timeout, 3, "embedding", { maxTimeoutRetries: BATCH_TIMEOUT_RETRIES }).waitSeconds;
+    assert.ok(later > first, `expected backoff to grow, got ${first} then ${later}`);
   });
 });

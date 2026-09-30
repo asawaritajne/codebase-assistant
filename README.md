@@ -231,6 +231,24 @@ is whether the implementation reaches the model at all.
 Questions are embedded once and cached, so later runs cost no quota. The daily job re-runs it, which
 keeps the scoreboard honest as more of the catalogue finishes indexing.
 
+### Watching the daily job
+
+The launchd job ends each run with a line saying what it achieved, because an exit code does not:
+three runs in one week reported success while embedding nothing, leaving a stale map, or stopping
+part-way through their budget.
+
+```
+=== verdict: embedded 750 chunks · map 11,121 points · benchmark hit@5 97% · 4,169 chunks left
+=== verdict: embedded FAILED chunks · map FAILED points · benchmark hit@5 97%
+```
+
+```bash
+tail -3 ~/Library/Logs/codebase-assistant-embed.log
+```
+
+Each step is also capped on the wall clock. A hung run would otherwise stop launchd starting the
+next day's, which once cost two days of indexing.
+
 ## Roadmap
 
 - Optional Java Spring Boot microservice for the retrieval step

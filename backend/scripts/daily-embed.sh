@@ -57,17 +57,46 @@ run_capped() {
   return $?
 }
 
+# Runs one step, keeping its output so the verdict can report what the step achieved rather than
+# what it returned. An exit code has said "0" three times this week for a run that did nothing.
+STEP_OUTPUT=""
+run_step() {
+  local limit=$1
+  shift
+  STEP_OUTPUT=$(mktemp)
+  run_capped "$limit" "$@" >"$STEP_OUTPUT" 2>&1
+  local status=$?
+  cat "$STEP_OUTPUT"
+  return $status
+}
+
 mkdir -p "$(dirname "$LOG_FILE")"
 {
   echo "=== $(date '+%Y-%m-%d %H:%M:%S %Z') daily indexing run"
   cd "$BACKEND_DIR" || exit 1
-  run_capped "$EMBED_LIMIT_SECONDS" npm run embed
+
+  run_step "$EMBED_LIMIT_SECONDS" npm run embed
   embed_status=$?
+  # The last progress line is what was really embedded, whether or not the step ended well.
+  embedded=$(grep -oE 'Progress: [0-9]+/' "$STEP_OUTPUT" | tail -1 | grep -oE '[0-9]+')
+  pending=$(grep -oE '[0-9]+ chunks still pending' "$STEP_OUTPUT" | tail -1 | grep -oE '^[0-9]+')
+  rm -f "$STEP_OUTPUT"
+
   # Rebuild the projection even after a partial run, so the visualization keeps up.
-  run_capped "$MAP_LIMIT_SECONDS" npm run map
+  run_step "$MAP_LIMIT_SECONDS" npm run map
+  mapped=$(grep -oE 'Stored [0-9]+ points' "$STEP_OUTPUT" | tail -1 | grep -oE '[0-9]+')
+  rm -f "$STEP_OUTPUT"
+
   # Re-score retrieval against the benchmark. Question vectors are cached after the first run, so
   # this normally costs no quota and keeps the scoreboard current as more of the catalogue indexes.
-  run_capped "$EVAL_LIMIT_SECONDS" npm run eval
+  run_step "$EVAL_LIMIT_SECONDS" npm run eval
+  scored=$(grep -oE 'hit@5 [0-9.]+%' "$STEP_OUTPUT" | head -1)
+  grep -q 'Saved;' "$STEP_OUTPUT" || scored=""
+  rm -f "$STEP_OUTPUT"
+
+  # One line saying what the run actually achieved. Anything a step failed to do reads as FAILED
+  # here, so a glance at the tail of this log is enough to know whether a day was lost.
   echo "=== $(date '+%H:%M:%S') done (embed exit ${embed_status})"
+  echo "=== verdict: embedded ${embedded:-FAILED} chunks · map ${mapped:-FAILED} points · benchmark ${scored:-FAILED}${pending:+ · ${pending} chunks left}"
   echo
 } >>"$LOG_FILE" 2>&1
