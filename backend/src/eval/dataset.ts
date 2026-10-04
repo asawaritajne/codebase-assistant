@@ -275,6 +275,121 @@ export const EVAL_CASES: EvalCase[] = [
     expect: ["packages/core/src/stateUtils.ts", "packages/core/src/transition.ts"],
     because: "selectTransitions and microstep, in stateUtils.ts, are what choose the transition.",
   },
+
+  // TanStack Query
+  {
+    id: "tq-retry",
+    repoId: "tanstack-query",
+    question: "How is a failed query retried, and what decides the delay between attempts?",
+    expect: ["packages/query-core/src/retryer.ts"],
+    because: "createRetryer counts failures and computes the backoff before each attempt.",
+  },
+  {
+    id: "tq-cache",
+    repoId: "tanstack-query",
+    question: "How are query results stored and found again by their key?",
+    expect: ["packages/query-core/src/queryCache.ts"],
+    because: "QueryCache builds, indexes, and looks up queries by their hashed key.",
+  },
+  {
+    id: "tq-infinite",
+    repoId: "tanstack-query",
+    question: "How does an infinite query work out which page to fetch next?",
+    expect: ["packages/query-core/src/infiniteQueryBehavior.ts"],
+    because: "The infinite behaviour calls getNextPageParam against the pages it already holds.",
+  },
+  {
+    id: "tq-batch",
+    repoId: "tanstack-query",
+    question: "How are subscriber notifications batched so one change doesn't re-render repeatedly?",
+    expect: ["packages/query-core/src/notifyManager.ts"],
+    because: "notifyManager schedules and flushes batched notifications.",
+  },
+
+  // React Router
+  {
+    id: "rr-match",
+    repoId: "react-router",
+    question: "How is a URL matched against the configured route patterns?",
+    expect: ["packages/react-router/lib/router/utils.ts"],
+    because: "matchRoutes, matchPath and compilePath all live there.",
+  },
+  {
+    id: "rr-history",
+    repoId: "react-router",
+    question: "How does navigating change the browser's URL and history?",
+    expect: ["packages/react-router/lib/router/history.ts"],
+    because: "createBrowserHistory wraps pushState and the popstate listener.",
+  },
+
+  // dayjs
+  {
+    id: "dayjs-format",
+    repoId: "dayjs",
+    question: "How is a date turned into a string by a format template?",
+    expect: ["src/index.js"],
+    because: "The format method on the Dayjs prototype does the token substitution.",
+  },
+  {
+    id: "dayjs-duration",
+    repoId: "dayjs",
+    question: "How is a length of time represented and turned into readable text?",
+    expect: ["src/plugin/duration/index.js"],
+    because: "The duration plugin defines the Duration class and its humanize.",
+  },
+  {
+    id: "dayjs-relative",
+    repoId: "dayjs",
+    question: "How are phrases like \u201C3 hours ago\u201D produced?",
+    expect: ["src/plugin/relativeTime/index.js"],
+    because: "The relativeTime plugin implements fromTo and its thresholds.",
+  },
+
+  // Preact
+  {
+    id: "preact-children",
+    repoId: "preact",
+    question: "How are a component's children compared with the previous render?",
+    expect: ["src/diff/children.js"],
+    because: "diffChildren builds the new child array and matches it against the old one.",
+  },
+  {
+    id: "preact-props",
+    repoId: "preact",
+    question: "How are attributes and event listeners applied to a DOM element?",
+    expect: ["src/diff/props.js"],
+    because: "setProperty and the shared event proxy handle both.",
+  },
+  {
+    id: "preact-setstate",
+    repoId: "preact",
+    question: "How is a state update scheduled and batched before re-rendering?",
+    expect: ["src/component.js"],
+    because: "setState enqueues the component, and enqueueRender batches the processing.",
+  },
+
+  // zod
+  {
+    id: "zod-parse",
+    repoId: "zod",
+    question: "How does parsing a value run its validation and return the result?",
+    expect: ["packages/zod/src/v4/core/parse.ts"],
+    because: "parse and safeParse, sync and async, are defined there.",
+  },
+  {
+    id: "zod-errors",
+    repoId: "zod",
+    question: "How are several validation problems collected into one error?",
+    expect: ["packages/zod/src/v4/core/errors.ts"],
+    because: "$ZodError carries the list of issues and formats their messages.",
+  },
+  {
+    id: "zod-checks",
+    repoId: "zod",
+    question: "How are constraints like a minimum length enforced on a value?",
+    expect: ["packages/zod/src/v4/core/checks.ts"],
+    because: "The check implementations for minimum and maximum live there.",
+  },
 ];
 
 export const casesForRepos = (repoIds: string[]): EvalCase[] =>
