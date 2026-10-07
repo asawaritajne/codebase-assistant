@@ -77,9 +77,18 @@ mkdir -p "$(dirname "$LOG_FILE")"
 
   run_step "$EMBED_LIMIT_SECONDS" npm run embed
   embed_status=$?
-  # The last progress line is what was really embedded, whether or not the step ended well.
+  # The last progress line is what was really embedded, whether or not the step ended well; there
+  # is no progress line at all when every document is already up to date, which is a success.
   embedded=$(grep -oE 'Progress: [0-9]+/' "$STEP_OUTPUT" | tail -1 | grep -oE '[0-9]+')
   pending=$(grep -oE '[0-9]+ chunks still pending' "$STEP_OUTPUT" | tail -1 | grep -oE '^[0-9]+')
+  # Reaching its own closing summary is what distinguishes a finished step from a broken one. The
+  # exit code does not: a run stopped by the daily quota exits 1 having embedded hundreds of chunks.
+  if grep -q 'chunks still pending' "$STEP_OUTPUT"; then
+    embed_result="${embedded:-0} chunks"
+    [ -z "$embedded" ] && embed_result="nothing to do"
+  else
+    embed_result="${embedded:-0} chunks then FAILED"
+  fi
   rm -f "$STEP_OUTPUT"
 
   # Rebuild the projection even after a partial run, so the visualization keeps up.
@@ -95,8 +104,9 @@ mkdir -p "$(dirname "$LOG_FILE")"
   rm -f "$STEP_OUTPUT"
 
   # One line saying what the run actually achieved. Anything a step failed to do reads as FAILED
-  # here, so a glance at the tail of this log is enough to know whether a day was lost.
+  # here, so a glance at the tail of this log is enough to know whether a day was lost — and a step
+  # with nothing left to do says so rather than crying wolf.
   echo "=== $(date '+%H:%M:%S') done (embed exit ${embed_status})"
-  echo "=== verdict: embedded ${embedded:-FAILED} chunks · map ${mapped:-FAILED} points · benchmark ${scored:-FAILED}${pending:+ · ${pending} chunks left}"
+  echo "=== verdict: embedded ${embed_result} · map ${mapped:-FAILED} points · benchmark ${scored:-FAILED}${pending:+ · ${pending} chunks left}"
   echo
 } >>"$LOG_FILE" 2>&1
