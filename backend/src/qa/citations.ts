@@ -6,6 +6,8 @@ const HORIZONTAL_RULE = /^([-*_])\1{2,}$/;
 /** A fully bold line like "**Unmounted fields**"; a bold sentence ending in . ! or ? isn't a label. */
 const BOLD_LABEL = /^\*\*[^*]*[^*.!?]\*\*:?$/;
 const MAX_REPORTED_TEXT = 200;
+/** Longest a list item can be and still read as an entry in a list rather than a claim. */
+const FRAGMENT_MAX_WORDS = 12;
 
 export interface CitationReport {
   /** True when every marker points at a retrieved source and every statement cites one. */
@@ -28,15 +30,38 @@ export function extractMarkers(text: string): string[] {
 }
 
 /**
+ * A list item that enumerates rather than claims: "`maxLength`", "`pattern`". It carries no
+ * citation of its own because it makes no statement of its own — the sentence introducing the list
+ * does. Anything long enough to assert something, or punctuated as a sentence, is not one of these.
+ */
+function isFragment(unit: string): boolean {
+  const text = unit.replace(LIST_ITEM, "").trim();
+  if (/[.!?]$/.test(text)) return false;
+  return text.split(/\s+/).filter(Boolean).length <= FRAGMENT_MAX_WORDS;
+}
+
+/**
  * Splits a Markdown answer into the units that should each carry a citation: paragraphs and list
  * items. Code blocks, headings, and rules state nothing on their own, so they are left out.
+ *
+ * An enumeration under a lead-in that cites a source is covered by that citation: "it has any of
+ * the following rules [S3]:" followed by the rules themselves. Requiring a marker on every one of
+ * those bullets reported seven uncited statements in an answer that was properly cited, which
+ * makes the warning meaningless exactly where it is supposed to carry weight.
  */
 function statements(answer: string): string[] {
   const units: string[] = [];
   let paragraph: string[] = [];
   let inCodeBlock = false;
+  /** Whether the lead-in governing the current list cited a source. */
+  let leadInCited = false;
   const flush = () => {
-    if (paragraph.length > 0) units.push(paragraph.join(" "));
+    if (paragraph.length > 0) {
+      const unit = paragraph.join(" ");
+      units.push(unit);
+      // A lead-in ends in a colon; anything else ends the list it would have governed.
+      leadInCited = isLabel(unit) && extractMarkers(unit).length > 0;
+    }
     paragraph = [];
   };
 
@@ -47,11 +72,15 @@ function statements(answer: string): string[] {
       inCodeBlock = !inCodeBlock;
     } else if (inCodeBlock) {
       continue;
-    } else if (line === "" || HEADING.test(line) || HORIZONTAL_RULE.test(line) || line.startsWith("|")) {
+    } else if (HEADING.test(line) || HORIZONTAL_RULE.test(line) || line.startsWith("|")) {
+      flush();
+      leadInCited = false;
+    } else if (line === "") {
+      // A blank line separates a lead-in from its list, so it does not end one.
       flush();
     } else if (LIST_ITEM.test(line)) {
       flush();
-      units.push(line);
+      if (!(leadInCited && isFragment(line))) units.push(line);
     } else {
       paragraph.push(line);
     }

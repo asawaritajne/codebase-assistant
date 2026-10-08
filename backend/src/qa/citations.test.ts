@@ -84,3 +84,65 @@ describe("checkCitations", () => {
     assert.equal(needsRegeneration(report), false);
   });
 });
+
+describe("checkCitations with enumerations", () => {
+  it("does not demand a citation on each entry of a cited list", () => {
+    // The real answer that exposed this reported seven uncited statements, all of them bullets
+    // belonging to a list whose lead-in already cited S3.
+    const answer = [
+      "A field has validation if it is mounted and has any of these rules defined [S3]:",
+      "",
+      "* `required` (and not explicitly set to `false`)",
+      "* `min`",
+      "* `maxLength`",
+      "* `pattern`",
+    ].join("\n");
+
+    const report = checkCitations(answer, 5);
+    assert.deepEqual(report.uncitedParagraphs, []);
+    assert.equal(report.valid, true);
+  });
+
+  it("still demands citations when the lead-in cites nothing", () => {
+    const answer = ["A field has validation if it has any of these rules:", "", "* `required`", "* `min`"].join("\n");
+
+    const report = checkCitations(answer, 5);
+    assert.equal(report.uncitedParagraphs.length, 2);
+  });
+
+  it("still demands a citation from a bullet that makes a claim of its own", () => {
+    const answer = [
+      "Validation runs in these places [S1]:",
+      "",
+      "* `onBlur`",
+      "* The resolver is called again whenever any registered field changes, which can be expensive.",
+    ].join("\n");
+
+    const report = checkCitations(answer, 5);
+    assert.equal(report.uncitedParagraphs.length, 1);
+    assert.match(report.uncitedParagraphs[0] ?? "", /resolver is called again/);
+  });
+
+  it("stops inheriting once an ordinary paragraph ends the list", () => {
+    const answer = [
+      "The rules are [S1]:",
+      "",
+      "* `min`",
+      "",
+      "Validation is skipped entirely for unmounted fields.",
+      "",
+      "* `max`",
+    ].join("\n");
+
+    const report = checkCitations(answer, 5);
+    // Both the paragraph and the bullet after it stand on their own.
+    assert.equal(report.uncitedParagraphs.length, 2);
+  });
+
+  it("stops inheriting across a heading", () => {
+    const answer = ["The rules are [S1]:", "", "* `min`", "", "## Resolvers", "", "* `yup`"].join("\n");
+
+    const report = checkCitations(answer, 5);
+    assert.deepEqual(report.uncitedParagraphs, ["* `yup`"]);
+  });
+});
