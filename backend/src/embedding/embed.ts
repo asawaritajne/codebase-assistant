@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Db, ObjectId, WithId } from "mongodb";
-import { withMongoRetry } from "../db/mongo.js";
+import { OPERATION_TIMEOUT_MS, withMongoRetry } from "../db/mongo.js";
 import { GeminiQuotaExhaustedError } from "../gemini/client.js";
 import { RAW_INGESTION_COLLECTION } from "../ingestion/store.js";
 import type { RawDocument, SourceType } from "../ingestion/types.js";
@@ -110,7 +110,7 @@ export async function runEmbedding(
   for (;;) {
     const filter = { repo: { $in: repos }, ...(after ? { _id: { $gt: after } } : {}) };
     const page = await withMongoRetry(`Planning${scanned > 0 ? ` (resuming after ${scanned})` : ""}`, () =>
-      rawCollection.find(filter).sort({ _id: 1 }).limit(PLAN_PAGE_SIZE).toArray(),
+      rawCollection.find(filter, { timeoutMS: OPERATION_TIMEOUT_MS }).sort({ _id: 1 }).limit(PLAN_PAGE_SIZE).toArray(),
     );
     if (page.length === 0) break;
 

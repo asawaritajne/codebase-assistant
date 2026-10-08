@@ -1,6 +1,6 @@
 import type { Db, Document, ObjectId } from "mongodb";
 import { REPOS } from "../config/repos.js";
-import { withMongoRetry } from "../db/mongo.js";
+import { BULK_TIMEOUT_MS, OPERATION_TIMEOUT_MS, withMongoRetry } from "../db/mongo.js";
 import { EMBEDDED_CHUNKS_COLLECTION } from "../embedding/store.js";
 import type { SourceType } from "../ingestion/types.js";
 import { projectTo3D, type Point3D, type ProjectionBasis } from "./projection.js";
@@ -62,6 +62,7 @@ async function* readChunkPages(db: Db): AsyncGenerator<Document[]> {
         .collection(EMBEDDED_CHUNKS_COLLECTION)
         .find(filter, {
           projection: { embedding: 1, repo: 1, type: 1, isTest: 1, title: 1, sourceUrl: 1, sourceId: 1, chunkIndex: 1 },
+          timeoutMS: OPERATION_TIMEOUT_MS,
         })
         .sort({ _id: 1 })
         .limit(MAP_PAGE_SIZE)
@@ -93,15 +94,22 @@ export async function buildEmbeddingMap(db: Db): Promise<number> {
   const builtAt = new Date();
   const collection = db.collection<MapPoint & { builtAt: Date }>(EMBEDDING_MAP_COLLECTION);
   await withMongoRetry("Replacing the stored map", async () => {
-    await collection.deleteMany({});
-    await collection.insertMany(points.map((point) => ({ ...point, builtAt })));
+    await collection.deleteMany({}, { timeoutMS: BULK_TIMEOUT_MS });
+    await collection.insertMany(
+      points.map((point) => ({ ...point, builtAt })),
+      { timeoutMS: BULK_TIMEOUT_MS },
+    );
   });
 
   // The basis lets a live question be placed in the same space without redoing the projection.
   await withMongoRetry("Storing the projection basis", () =>
     db
       .collection(BASIS_COLLECTION)
-      .replaceOne({ _id: "current" as never }, { ...basis, builtAt, points: points.length }, { upsert: true }),
+      .replaceOne(
+        { _id: "current" as never },
+        { ...basis, builtAt, points: points.length },
+        { upsert: true, timeoutMS: OPERATION_TIMEOUT_MS },
+      ),
   );
 
   return points.length;

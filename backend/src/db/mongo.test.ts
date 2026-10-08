@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { MongoNetworkError, MongoServerError, MongoServerSelectionError } from "mongodb";
+import {
+  MongoNetworkError,
+  MongoOperationTimeoutError,
+  MongoServerError,
+  MongoServerSelectionError,
+} from "mongodb";
 import { withMongoRetry } from "./mongo.js";
 
 const blip = () => new MongoNetworkError("connection 3 to cluster closed");
@@ -57,6 +62,14 @@ describe("withMongoRetry", () => {
   it("recovers when a blip clears before the attempts run out", async () => {
     const operation = flaky(1, "connected");
     assert.equal(await withMongoRetry("connecting", operation.run, 3), "connected");
+    assert.equal(operation.calls, 2);
+  });
+
+  it("retries a call that blew its deadline", async () => {
+    // timeoutMS turns a hung read into this error. If it were not retryable, the deadline would
+    // only convert a thirty-minute hang into an immediate failure.
+    const operation = flaky(1, "read", () => new MongoOperationTimeoutError("Timed out during socket read"));
+    assert.equal(await withMongoRetry("reading", operation.run, 3), "read");
     assert.equal(operation.calls, 2);
   });
 

@@ -1,4 +1,10 @@
-import { MongoClient, MongoNetworkError, MongoServerSelectionError, type Db } from "mongodb";
+import {
+  MongoClient,
+  MongoNetworkError,
+  MongoOperationTimeoutError,
+  MongoServerSelectionError,
+  type Db,
+} from "mongodb";
 
 const MAX_ATTEMPTS = 4;
 /**
@@ -9,6 +15,17 @@ const MAX_ATTEMPTS = 4;
 const CONNECT_ATTEMPTS = 3;
 /** Fail fast per attempt; the driver's own default is 30s. */
 const CONNECT_TIMEOUT_MS = 10_000;
+/**
+ * Deadline for one database call, so a stalled one reports instead of hanging.
+ *
+ * withMongoRetry can only retry an operation that fails. A read against a socket that died quietly
+ * never fails: it waits. That is how the map step hung four times in twelve days, each time sitting
+ * until the daily job's wall-clock cap killed it half an hour later. A page read finishes in well
+ * under a second, so anything approaching this is already dead.
+ */
+export const OPERATION_TIMEOUT_MS = 30_000;
+/** Replacing the whole map is a far bigger unit of work than reading one page of it. */
+export const BULK_TIMEOUT_MS = 120_000;
 
 /**
  * Runs an idempotent database operation, retrying when the connection drops. The driver's own
@@ -23,7 +40,12 @@ export async function withMongoRetry<T>(
     try {
       return await operation();
     } catch (error) {
-      const transient = error instanceof MongoNetworkError || error instanceof MongoServerSelectionError;
+      // An expired timeoutMS is exactly the case this exists for: the deadline turns a hung call
+      // into an error so it can be tried again, which only helps if it counts as worth retrying.
+      const transient =
+        error instanceof MongoNetworkError ||
+        error instanceof MongoServerSelectionError ||
+        error instanceof MongoOperationTimeoutError;
       if (!transient || attempt >= maxAttempts) throw error;
       const waitSeconds = 2 ** attempt;
       console.warn(`[mongo] ${label} failed (${error.message}); retrying in ${waitSeconds}s`);
