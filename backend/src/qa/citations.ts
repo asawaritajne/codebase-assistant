@@ -8,6 +8,11 @@ const BOLD_LABEL = /^\*\*[^*]*[^*.!?]\*\*:?$/;
 const MAX_REPORTED_TEXT = 200;
 /** Longest a list item can be and still read as an entry in a list rather than a claim. */
 const FRAGMENT_MAX_WORDS = 12;
+/** Ways of saying the sources do not answer the question. */
+const ABSENCE =
+  /\b(no information|nothing (?:in|about)|(?:do|does|did)(?: n[o']t| not)\s+(?:contain|include|mention|explain|specify|cover|describe)|not (?:contained|included|mentioned|explained|specified|covered|described)|cannot be determined|can(?:'|no)t be determined|silent on)\b/i;
+/** Only an absence that is about the sources themselves, not an absence in the code being described. */
+const ABOUT_SOURCES = /\b(sources?|provided|retrieved|excerpts?|indexed)\b/i;
 
 export interface CitationReport {
   /** True when every marker points at a retrieved source and every statement cites one. */
@@ -87,7 +92,17 @@ function statements(answer: string): string[] {
   }
   flush();
 
-  return units.filter((unit) => !isLabel(unit));
+  return units.filter((unit) => !isLabel(unit) && !isGapStatement(unit));
+}
+
+/**
+ * "The sources don't explain why this was added." Such a statement makes no claim about the
+ * repository, so there is nothing to cite — and the answer prompt asks for exactly this rather
+ * than a guess. Flagging it told the reader an honest answer could not be traced, and counted
+ * against the citation pass rate the evaluation page publishes.
+ */
+function isGapStatement(unit: string): boolean {
+  return ABSENCE.test(unit) && ABOUT_SOURCES.test(unit);
 }
 
 /**

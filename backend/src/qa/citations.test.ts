@@ -146,3 +146,35 @@ describe("checkCitations with enumerations", () => {
     assert.deepEqual(report.uncitedParagraphs, ["* `yup`"]);
   });
 });
+
+describe("checkCitations when the sources fall short", () => {
+  it("does not flag an answer for saying the sources do not cover the question", () => {
+    // The answer prompt asks for this instead of a guess, so penalising it discourages the one
+    // behaviour that keeps an ungrounded answer off the page.
+    const answer = [
+      "Based on the provided sources, there is no information explaining why the fetch adapter was added.",
+      "",
+      "The sources only cover a bug fix deferring global access [S1].",
+    ].join("\n");
+
+    const report = checkCitations(answer, 5);
+    assert.deepEqual(report.uncitedParagraphs, []);
+    assert.equal(report.valid, true);
+  });
+
+  it("still flags a claim about the code that happens to describe something missing", () => {
+    // "The option is not included in the config" is a claim about the repository, not about the
+    // sources, and needs a citation like any other.
+    const answer = "The `retry` option is not included in the default configuration.";
+
+    const report = checkCitations(answer, 5);
+    assert.equal(report.uncitedParagraphs.length, 1);
+  });
+
+  it("does not let a bare mention of sources excuse an uncited claim", () => {
+    const answer = "Based on the provided sources, validation runs on every keystroke.";
+
+    const report = checkCitations(answer, 5);
+    assert.equal(report.uncitedParagraphs.length, 1);
+  });
+});
