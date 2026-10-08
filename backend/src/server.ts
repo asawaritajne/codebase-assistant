@@ -23,6 +23,8 @@ const embedder = new GeminiEmbedder(config.geminiApiKey);
 const generator = new GeminiGenerator(config.geminiApiKey);
 
 const app = express();
+// Render terminates TLS in front of the app; without this req.ip is the proxy's address.
+app.set("trust proxy", 1);
 app.use(cors({ origin: config.corsOrigins }));
 // The embedding map is a big JSON payload; gzip takes it from megabytes to a few hundred KB.
 app.use(compression());
@@ -36,7 +38,7 @@ app.use(createMapRouter(db, embedder));
 app.use(createAskRouter(db, embedder, generator));
 app.use(createQualityRouter(db));
 app.use(createEvaluationRouter(db));
-app.use(createIngestRouter(db, github, catalog));
+app.use(createIngestRouter(db, github, catalog, config.adminToken));
 
 const handleError: ErrorRequestHandler = (error, _req, res, _next) => {
   console.error("[server]", error);

@@ -13,6 +13,12 @@ export interface AppConfig {
   port: number;
   /** Browser origins allowed to call the API, i.e. where the frontend is served from. */
   corsOrigins: string[];
+  /**
+   * Secret required by the ingestion endpoint. Unset means ingestion is refused outright rather
+   * than left open: it spends the GitHub token's rate limit, so a public deployment that forgot to
+   * set it should fail closed.
+   */
+  adminToken: string | null;
 }
 
 function required(name: string): string {
@@ -35,5 +41,6 @@ export function loadConfig(): AppConfig {
       .split(",")
       .map((origin) => origin.trim())
       .filter(Boolean),
+    adminToken: process.env.ADMIN_TOKEN?.trim() || null,
   };
 }

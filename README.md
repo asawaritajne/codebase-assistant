@@ -177,7 +177,7 @@ access token with `public_repo` scope.
 | `GET /evaluation` | The latest retrieval benchmark run, with every case's result |
 | `GET /quality` | Aggregate answer quality: citations, regenerations, latency, ratings |
 | `POST /answers/:id/feedback` | `{ "rating": "up" \| "down" }` → records a reader's verdict |
-| `POST /ingest/:repoId` | Re-ingest one repository (protect before deploying) |
+| `POST /ingest/:repoId` | Re-ingest one repository — requires `Authorization: Bearer $ADMIN_TOKEN` |
 
 ## Project layout
 
@@ -249,8 +249,35 @@ tail -3 ~/Library/Logs/codebase-assistant-embed.log
 Each step is also capped on the wall clock. A hung run would otherwise stop launchd starting the
 next day's, which once cost two days of indexing.
 
+## Deploying
+
+The backend runs on Render, the frontend on Vercel, both on free plans.
+
+**Before the first deploy**
+
+- Atlas → Network Access → allow `0.0.0.0/0`. Render's free tier has no fixed outbound IP, so an
+  allowlist of specific addresses cannot work.
+- Generate an admin token: `openssl rand -hex 32`. Without it the ingestion endpoint refuses every
+  request, which is the safe default but also means re-ingesting needs it set.
+
+**Backend (Render)** — a Web Service from this repo, root directory `backend`, build
+`npm install && npm run build`, start `npm start`. Environment: `GITHUB_TOKEN`, `GEMINI_API_KEY`,
+`MONGODB_URI`, `ADMIN_TOKEN`, and `CORS_ORIGINS` set to the Vercel URL.
+
+**Frontend (Vercel)** — root directory `frontend`, framework Vite. Environment: `VITE_API_URL` set
+to the Render URL, no trailing slash. `vercel.json` rewrites every path to `index.html`, without
+which a refresh on `/evaluation` or a shared `/a/<id>` link returns a 404.
+
+**What to expect**
+
+- A free Render service sleeps after 15 minutes idle and takes roughly 50 seconds to wake. The
+  first request after a quiet spell is slow; the frontend waits up to 120 seconds for it.
+- Questions are limited to 20 per visitor per hour. One person with a loop would otherwise spend the
+  day's Gemini quota, which is shared with indexing.
+- Indexing still runs from a developer machine against the same Atlas cluster (see the launchd job
+  above). The deployed site picks up new chunks within 30 seconds, with no redeploy.
+
 ## Roadmap
 
-- Optional Java Spring Boot microservice for the retrieval step
-- Deployment: backend on Render, frontend on Vercel
-- Authentication on the ingestion endpoint and rate limiting on questions
+- Extracting retrieval into a Java Spring Boot service, called over HTTP (Phase 5, optional)
+- Benchmark cases for commit and pull-request retrieval, which is currently unmeasured

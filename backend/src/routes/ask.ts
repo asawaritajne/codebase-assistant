@@ -7,6 +7,7 @@ import { GeminiQuotaExhaustedError, GeminiUnavailableError } from "../gemini/cli
 import type { ConversationTurn } from "../generation/prompt.js";
 import { MAX_HISTORY_TURNS, answerQuestion } from "../qa/ask.js";
 import { readSharedAnswer } from "../qa/history.js";
+import { rateLimit } from "./rateLimit.js";
 
 const MAX_QUESTION_LENGTH = 1000;
 
@@ -27,7 +28,8 @@ function parseHistory(value: unknown): ConversationTurn[] {
 export function createAskRouter(db: Db, embedder: GeminiEmbedder, generator: GeminiGenerator): Router {
   const router = Router();
 
-  router.post("/ask", async (req, res) => {
+  // One visitor should not be able to spend the day's free-tier quota by themselves.
+  router.post("/ask", rateLimit(), async (req, res) => {
     const body = req.body as { question?: unknown; repo?: unknown; history?: unknown } | undefined;
     const question = typeof body?.question === "string" ? body.question.trim() : "";
     const repo = typeof body?.repo === "string" ? findRepo(body.repo) : undefined;
