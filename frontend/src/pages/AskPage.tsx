@@ -138,6 +138,16 @@ function RepoEmptyState({
         {repo.description} Answers come only from its indexed code, tests, commits, and pull requests, with every claim
         linked to GitHub.
       </p>
+      {/*
+        The history is a window, not the whole repository. Without saying so, "why was this added?"
+        about an older change returns an honest "the sources don't explain it" that reads like a
+        failure — the code is all here, but only the most recent history is.
+      */}
+      <p className="mx-auto mt-2 max-w-lg font-mono text-xs leading-relaxed text-mist/60">
+        All source files, plus the {formatNumber(repo.stats.commits)} most recent commits and{" "}
+        {formatNumber(repo.stats.pullRequests)} most recently merged pull requests — so questions about older changes
+        may have nothing to draw on.
+      </p>
       {canAsk && (
         <div className="mx-auto mt-8 grid max-w-xl gap-2 sm:grid-cols-2">
           {repo.exampleQuestions.map((question) => (
