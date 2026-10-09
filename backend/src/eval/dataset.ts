@@ -11,10 +11,20 @@ export interface EvalCase {
   id: string;
   repoId: string;
   question: string;
-  /** Files that count as finding the answer; any one of them is a hit. */
+  /**
+   * What counts as finding the answer; any one of them is a hit. For code these are exact file
+   * paths. For history they are distinctive fragments of a commit subject or pull-request title,
+   * matched loosely on purpose: one change is indexed as both, and the two are worded differently
+   * ("feat: add `shouldTouch` option (#13671)" against "#13671 feat: add `shouldTouch` option").
+   */
   expect: string[];
-  /** Why that is the right file — shown next to the result. */
+  /** Why that is the right source — shown next to the result. */
   because: string;
+  /**
+   * Which part of the index the question is about. Roughly a third of what is indexed is commits
+   * and pull requests, and until these cases existed none of it was measured.
+   */
+  scope?: "code" | "history";
 }
 
 export const EVAL_CASES: EvalCase[] = [
@@ -389,6 +399,81 @@ export const EVAL_CASES: EvalCase[] = [
     question: "How are constraints like a minimum length enforced on a value?",
     expect: ["packages/zod/src/v4/core/checks.ts"],
     because: "The check implementations for minimum and maximum live there.",
+  },
+
+  // History. Questions are phrased the way someone would ask them, rather than as keyword lookups
+  // for the titles below, which would measure nothing.
+  {
+    id: "rhf-history-touch",
+    repoId: "react-hook-form",
+    question: "Was there a change that lets triggering validation also mark the field as touched?",
+    expect: ["shouldTouch"],
+    because: "The change adding the shouldTouch option to trigger().",
+    scope: "history",
+  },
+  {
+    id: "rhf-history-errors",
+    repoId: "react-hook-form",
+    question: "Has anything been added for reading errors without subscribing to them?",
+    expect: ["getErrors"],
+    because: "The change adding getErrors, which reads errors without a subscription.",
+    scope: "history",
+  },
+  {
+    id: "rhf-history-delay",
+    repoId: "react-hook-form",
+    question: "Can error display be delayed after setting a value, and was that added deliberately?",
+    expect: ["delayError"],
+    because: "The change adding the opt-in delayError option for setValue.",
+    scope: "history",
+  },
+  {
+    id: "axios-history-node",
+    repoId: "axios",
+    question: "What is the minimum Node version for the next major release?",
+    expect: ["Node.js 20"],
+    because: "The breaking change requiring Node.js 20 for v2.",
+    scope: "history",
+  },
+  {
+    id: "axios-history-status",
+    repoId: "axios",
+    question: "Were any missing HTTP status codes added recently?",
+    expect: ["520", "RFC 9110 aliases"],
+    because: "The changes adding 520 and the RFC 9110 aliases to HttpStatusCode.",
+    scope: "history",
+  },
+  {
+    id: "axios-history-merge",
+    repoId: "axios",
+    question: "Can configuration keys be symbols rather than strings?",
+    expect: ["mergeConfig"],
+    because: "The change adding symbol key support to mergeConfig.",
+    scope: "history",
+  },
+  {
+    id: "vite-history-profile",
+    repoId: "vite",
+    question: "Is there a way to give a CPU profile a name when starting the CLI?",
+    expect: ["--profile"],
+    because: "The change allowing the profile to be named via --profile [name].",
+    scope: "history",
+  },
+  {
+    id: "vite-history-hooks",
+    repoId: "vite",
+    question: "Can a plugin run something when the dev server shuts down?",
+    expect: ["closeServer"],
+    because: "The change adding the closeServer and closePreviewServer hooks.",
+    scope: "history",
+  },
+  {
+    id: "zustand-history-devtools",
+    repoId: "zustand",
+    question: "Was there a fix for devtools behaving differently in Firefox and Safari?",
+    expect: ["findCallerName", "Firefox/Safari"],
+    because: "The fix for the Firefox and Safari stack format in findCallerName.",
+    scope: "history",
   },
 ];
 

@@ -110,9 +110,22 @@ export function scoreByRepo(results: CaseResult[], variant: "policy" | "baseline
     .sort((a, b) => b.hitAt5 - a.hitAt5 || a.repo.localeCompare(b.repo));
 }
 
-/** Position of the first expected file among the retrieved files, 1-based. */
-export function rankOfExpected(retrieved: RetrievedFile[], expect: string[]): number | null {
-  const index = retrieved.findIndex((file) => expect.includes(file.title));
+/**
+ * Position of the first expected source among those retrieved, 1-based.
+ *
+ * Code is matched on the exact path. History is matched on a fragment, because the same change is
+ * indexed as a commit and as a pull request under two different titles, and either is a hit.
+ */
+export function rankOfExpected(
+  retrieved: RetrievedFile[],
+  expect: string[],
+  scope: EvalCase["scope"] = "code",
+): number | null {
+  const hit = (title: string) =>
+    scope === "history"
+      ? expect.some((fragment) => title.toLowerCase().includes(fragment.toLowerCase()))
+      : expect.includes(title);
+  const index = retrieved.findIndex((file) => hit(file.title));
   return index === -1 ? null : index + 1;
 }
 
@@ -184,7 +197,10 @@ export async function runEvaluation(
     // Code only: the benchmark asks where something is implemented, and a commit that mentions the
     // file is not the same as the file. Both searches re-use the one question vector, so measuring
     // the policy against the plain baseline costs no embedding quota.
-    const filter = { repo: repo.fullName, type: "code" };
+    const filter =
+      testCase.scope === "history"
+        ? { repo: repo.fullName, type: { $in: ["commit", "pr"] } }
+        : { repo: repo.fullName, type: "code" };
     const [chunks, plain] = await Promise.all([
       retrieveRelevantChunks(db, vectors[index]!, { limit, filter, minNonTest }),
       retrieveRelevantChunks(db, vectors[index]!, { limit, filter }),
@@ -199,9 +215,9 @@ export async function runEvaluation(
     results.push({
       ...testCase,
       retrieved,
-      rank: rankOfExpected(retrieved, testCase.expect),
+      rank: rankOfExpected(retrieved, testCase.expect, testCase.scope),
       baseline,
-      rankBaseline: rankOfExpected(baseline, testCase.expect),
+      rankBaseline: rankOfExpected(baseline, testCase.expect, testCase.scope),
     });
   }
 

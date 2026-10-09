@@ -72,10 +72,11 @@ Design decisions worth calling out:
 - **The index is visible.** Every embedded chunk is projected from 768 dimensions to 3 with PCA and
   rendered as an interactive point cloud, so “search by meaning” is something you can look at — and a
   live question can be placed in that same space, lit up against the chunks it retrieves.
-- **Retrieval is benchmarked, not asserted.** 33 hand-written questions each name, in advance, the
-  file that genuinely answers them; retrieval either finds it or it doesn't, scored with hit@k and
+- **Retrieval is benchmarked, not asserted.** 57 hand-written questions each name, in advance, the
+  source that genuinely answers them; retrieval either finds it or it doesn't, scored with hit@k and
   MRR. No model takes part, so nothing can be argued into being right afterwards. `/evaluation`
-  publishes every case, misses included.
+  publishes every case, misses included. Nine cover commits and pull requests, which are a third of
+  the index and went unmeasured until they existed.
 - **The benchmark found a real bug.** Four questions retrieved nothing but test files — a test named
   `persistSync.test.tsx` outranks the implementation it tests, because it restates the question.
   Retrieval now reserves slots for non-test code (`NON_TEST_FLOOR`), so an answer always has an
@@ -220,13 +221,18 @@ put it:
 #1     axios-settle        lib/core/settle.js
 #3     zustand-persist     tests/persistAsync.test.tsx
 
-33 cases · hit@1 54.5% · hit@3 90.9% · hit@5 97% · MRR 0.726 · 1 missed
-       plain search:    hit@1 54.5% · hit@3 84.8% · hit@5 87.9% · MRR 0.694 · 4 missed
+57 cases · hit@1 66.7% · hit@3 93% · hit@5 98.2% · MRR 0.798 · 1 missed
+       plain search:    hit@1 66.7% · hit@3 89.5% · hit@5 91.2% · MRR 0.776 · 5 missed
 ```
 
-Reserving slots for non-test code took misses from 4 to 1 and hit@5 from 87.9% to 97%. It leaves
+Reserving slots for non-test code took misses from 5 to 1 and hit@5 from 91.2% to 98.2%. It leaves
 hit@1 alone by design — the reserved slots sit below the top results, and what matters for an answer
 is whether the implementation reaches the model at all.
+
+Read the history cases with some suspicion: all nine rank first, but each repository holds only
+about 300 commits and pull requests against thousands of code chunks, and a question about a change
+naturally shares vocabulary with the title of that change. They are easier than the code cases, and
+adding them lifted the headline hit@1 from 60.4% to 66.7% without retrieval improving at all.
 
 Questions are embedded once and cached, so later runs cost no quota. The daily job re-runs it, which
 keeps the scoreboard honest as more of the catalogue finishes indexing.
