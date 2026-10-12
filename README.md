@@ -1,8 +1,15 @@
 # Codebase Q&A
 
+**[codebase-assistant-gamma.vercel.app](https://codebase-assistant-gamma.vercel.app)** — live, with
+13 repositories and 15,290 searchable chunks indexed.
+
 Ask natural-language questions about real open-source codebases and get answers built **only** from
 their actual source code, commit history, and pull requests, with every claim linked to the exact
 lines on GitHub.
+
+> The backend runs on a free Render instance that sleeps after 15 minutes idle, so the first request
+> after a quiet spell takes about 40 seconds to wake it. The page loads immediately; the repository
+> list and the 3D map fill in once it is up.
 
 > "How does the library decide whether a field is dirty?"
 >
