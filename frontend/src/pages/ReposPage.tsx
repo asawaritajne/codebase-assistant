@@ -4,6 +4,7 @@ import { Reveal } from "../components/Reveal";
 import { catalogTotals, formatNumber } from "../lib/format";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 import { useRepos } from "../repos/ReposContext";
+import { SOURCE_URL } from "../site";
 
 export function ReposPage() {
   useDocumentTitle("Repositories");
@@ -48,6 +49,36 @@ export function ReposPage() {
             <RepoIndexSkeleton />
           )}
         </div>
+
+        {/*
+          The obvious question on seeing a fixed list is whether you can add your own. Answering it
+          here, with the reason, reads as a decision rather than a missing feature — and indexing a
+          repository really does cost one to three days of the free embedding quota.
+        */}
+        <Reveal className="mt-16 border-t border-white/10 pt-8">
+          <h2 className="display text-2xl text-chalk">Why thirteen, and not yours</h2>
+          <div className="mt-4 grid gap-x-12 gap-y-4 text-sm leading-relaxed text-mist md:grid-cols-2">
+            <p>
+              Indexing one repository costs between 500 and 2,500 embeddings, against a free tier of about a thousand a
+              day shared with answering questions. A single new codebase takes one to three days, so the catalogue is
+              chosen in advance rather than open to any URL.
+            </p>
+            <p>
+              The whole thing is open source, though. Clone it, add an entry to{" "}
+              <span className="font-mono text-xs text-chalk">config/repos.ts</span>, point it at your own GitHub and
+              Gemini keys, and it will index whatever you like —{" "}
+              <a
+                href={SOURCE_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="text-glow transition-colors hover:text-chalk"
+              >
+                the setup is in the README <span aria-hidden="true">↗</span>
+              </a>
+              .
+            </p>
+          </div>
+        </Reveal>
       </div>
     </div>
   );
